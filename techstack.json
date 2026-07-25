@@ -1,0 +1,93 @@
+{
+  "project": "실적ON (SiljeokON)",
+  "description": "카드 결제 문자를 파싱해 실적을 추적하고 초과 시 대체 카드를 제안하는 기기 내 처리 PWA. 결제 데이터는 기기를 벗어나지 않는다.",
+  "lastUpdated": "2026-07-25",
+  "architectureSummary": "전 페이지 클라이언트 렌더링 + Next.js 정적 내보내기(output: 'export'). 파싱·실적계산·최적화·분석이 모두 브라우저에서 실행되고, IndexedDB(Dexie)가 단일 저장소다. 서버·서버리스 함수 없이 out/ 정적 파일만 Netlify가 서빙한다. 외부 런타임 의존성·네트워크 요청 없음(CSP connect-src 'self'로 강제). 폰트도 self-host라 외부 CDN 0건.",
+  "repo": "credit_card_alarm",
+  "categories": [
+    {
+      "name": "프론트엔드 프레임워크",
+      "items": [
+        { "name": "Next.js", "version": "14.2.32", "purpose": "App Router 기반 정적 셸 + 전 페이지 CSR. 정적 내보내기로 CDN 배포", "config": "next.config.js" },
+        { "name": "React", "version": "18.3", "purpose": "UI 렌더링" },
+        { "name": "TypeScript", "version": "5.9 (strict)", "purpose": "금액 계산 도메인의 타입 안정성", "config": "tsconfig.json" }
+      ]
+    },
+    {
+      "name": "스타일·폰트",
+      "items": [
+        { "name": "Tailwind CSS", "version": "3.4", "purpose": "디자인 토큰(CSS 변수) 매핑. preflight는 끔(프로토타입 CSS 보존)", "config": "tailwind.config.ts" },
+        { "name": "globals.css", "purpose": "디자인 토큰 12종 + 컴포넌트 스타일(카드 게이지 등)", "config": "src/app/globals.css" },
+        { "name": "Pretendard (self-host)", "version": "1.3.9", "purpose": "next/font/local로 가변 woff2 self-host. 외부 CDN 없이 프리로드", "config": "src/app/fonts.ts, src/app/fonts/PretendardVariable.woff2" }
+      ]
+    },
+    {
+      "name": "상태·저장 (핵심 라이브러리)",
+      "items": [
+        { "name": "Dexie", "version": "4.x", "purpose": "IndexedDB 래퍼. cards/transactions/unrecognized/meta 4테이블, 복합 인덱스 [cardId+date]", "config": "src/lib/db/schema.ts" },
+        { "name": "dexie-react-hooks", "version": "1.1", "purpose": "라이브 쿼리(현재 store 중심 구조에서 보조)" },
+        { "name": "Zustand", "version": "4.5", "purpose": "인메모리 앱 상태. Dexie를 단일 진실 원천으로 미러링", "config": "src/store/useAppStore.ts" }
+      ]
+    },
+    {
+      "name": "도메인 로직 (순수 함수, 라이브러리 없음)",
+      "items": [
+        { "name": "SMS 파서", "purpose": "규칙 기반. 카드사 13종·업종 15종 사전, 누적금액 오인식 방지, 가맹점 3단 폴백", "config": "src/lib/parser/" },
+        { "name": "실적 엔진", "purpose": "주기 계산·실적 집계·최적화 조치·분석", "config": "src/lib/domain/" }
+      ]
+    },
+    {
+      "name": "차트",
+      "items": [
+        { "name": "직접 구현 (CSS/SVG)", "purpose": "막대·수평바. 라이브러리 미도입(번들 절약)", "config": "src/components/stats/" }
+      ]
+    },
+    {
+      "name": "PWA",
+      "items": [
+        { "name": "manifest.json", "purpose": "설치 가능 + Web Share Target(GET) 선언", "config": "public/manifest.json" },
+        { "name": "Service Worker (수동)", "purpose": "앱 셸 캐시 우선. 공유 요청을 캐시된 셸로 응답해 오프라인 공유 보장", "config": "public/sw.js" }
+      ]
+    },
+    {
+      "name": "테스트",
+      "items": [
+        { "name": "Vitest", "version": "2.1", "purpose": "파서 골든 케이스 56건 + 도메인 경계 17건", "config": "vitest.config.ts" },
+        { "name": "@testing-library/react", "version": "16", "purpose": "컴포넌트 테스트 기반(설치·설정 완료)" },
+        { "name": "Playwright", "version": "1.62", "purpose": "E2E 3시나리오(온보딩·문자입력·최적화). 정적 export 빌드에도 통과", "config": "playwright.config.ts, e2e/" }
+      ]
+    },
+    {
+      "name": "인증·접근제어",
+      "items": [
+        { "name": "없음", "purpose": "회원가입·로그인·세션 없음. 서버가 사용자를 식별할 수단 자체를 두지 않음" }
+      ]
+    },
+    {
+      "name": "CORS / 네트워크 / CSP",
+      "items": [
+        { "name": "connect-src 'self'", "purpose": "외부 요청 0건을 CSP로 강제(핵심 방어선). 애널리틱스·외부 폰트·CDN 없음", "config": "public/_headers(prod), next.config.js headers()(dev)" },
+        { "name": "script-src 'self' 'unsafe-inline'", "purpose": "정적 App Router의 인라인 하이드레이션 스크립트 허용(nonce 불가). 외부 스크립트 호스트는 여전히 차단, dangerouslySetInnerHTML 0건" }
+      ]
+    },
+    {
+      "name": "데이터·스토리지",
+      "items": [
+        { "name": "IndexedDB", "purpose": "유일한 저장소. 결제·카드 데이터 로컬 보관", "config": "src/lib/db/" },
+        { "name": "JSON 백업", "purpose": "내보내기/가져오기(병합·덮어쓰기). 서버 동기화 없음", "config": "src/lib/db/backup.ts" }
+      ]
+    },
+    {
+      "name": "호스팅·배포",
+      "items": [
+        { "name": "Netlify (정적)", "purpose": "GitHub 연결 → build 'npm run build' → publish 'out/'. 서버리스 함수 없이 정적 서빙", "config": "netlify.toml, public/_headers" }
+      ]
+    },
+    {
+      "name": "운영 가시성(Observability)",
+      "items": [
+        { "name": "해당 없음", "purpose": "백엔드 서버가 없어 서버 헬스/배터리 인디케이터 미적용. 네트워크 요청 0건 원칙과 충돌하므로 클라이언트 카운터도 두지 않음" }
+      ]
+    }
+  ]
+}

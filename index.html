@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#101B2D">
+<meta name="description" content="실적ON — 카드 결제 문자를 읽어 실적을 추적하고, 초과한 순간 다음 카드로 갈아타게 해주는 기기 내 처리 웹앱">
+<title>실적ON</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{
+  --paper:#E9ECF1;
+  --paper-2:#F4F6F9;
+  --surface:#FFFFFF;
+  --ink:#101B2D;
+  --ink-2:#3A4761;
+  --mute:#8590A3;
+  --line:#DBE1EA;
+  --hl:#F2E14B;
+  --hl-soft:#FBF3A8;
+  --go:#0F9E8E;
+  --go-soft:#DFF3F0;
+  --warn:#FF6A4D;
+  --warn-soft:#FFE6E0;
+  --blue:#2F5BEA;
+  --r:14px;
+  --sans:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,"Roboto Mono","DejaVu Sans Mono",monospace;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--sans);
+  background:var(--paper);
+  color:var(--ink);
+  font-size:15px;line-height:1.5;
+  letter-spacing:-.01em;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:calc(78px + var(--safe-b));
+  overscroll-behavior-y:contain;
+}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;letter-spacing:-.03em}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px}
+
+/* ── 상단 ─────────────────────────── */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:rgba(233,236,241,.86);backdrop-filter:saturate(180%) blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .wrap{display:flex;align-items:center;gap:10px;height:56px}
+.brand{font-weight:800;font-size:18px;letter-spacing:-.04em;display:flex;align-items:center;gap:7px}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--hl);box-shadow:0 0 0 3px rgba(242,225,75,.28)}
+.cycle{margin-left:auto;font-size:12px;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);
+  border-radius:999px;padding:5px 11px;font-weight:600}
+h1.view-title{font-size:23px;font-weight:800;letter-spacing:-.045em;margin:20px 0 4px}
+p.view-sub{color:var(--mute);font-size:13px;margin:0 0 16px}
+.sec{font-size:12px;font-weight:700;color:var(--mute);letter-spacing:.06em;margin:26px 0 10px;
+  display:flex;align-items:center;gap:8px}
+.sec::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* ── 히어로: 오늘 이 카드 ────────────── */
+.hero{
+  position:relative;overflow:hidden;
+  background:var(--ink);color:#fff;border-radius:20px;padding:20px 18px 18px;margin-top:16px;
+}
+.hero .eyebrow{font-size:11px;letter-spacing:.14em;font-weight:700;color:var(--hl);text-transform:uppercase}
+.hero .pick{font-size:26px;font-weight:800;letter-spacing:-.045em;margin:8px 0 2px;line-height:1.2}
+.hero .why{font-size:13px;color:#AFBACD;margin:0}
+.hero .mark{
+  position:absolute;right:-26px;bottom:-34px;width:132px;height:84px;border-radius:12px;
+  background:linear-gradient(120deg,rgba(242,225,75,.22),rgba(15,158,142,.22));
+  transform:rotate(-13deg);border:1px solid rgba(255,255,255,.14)
+}
+.hero .stat{display:flex;gap:18px;margin-top:14px;padding-top:13px;border-top:1px solid rgba(255,255,255,.14)}
+.hero .stat div{font-size:11px;color:#93A0B5}
+.hero .stat b{display:block;font-size:17px;color:#fff;margin-top:2px;font-weight:700}
+
+/* ── 시그니처: 카드=게이지 ────────────── */
+.pcard{
+  position:relative;overflow:hidden;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px 15px 15px;margin-bottom:11px;cursor:pointer;
+  transition:transform .12s ease,box-shadow .12s ease;
+}
+.pcard:active{transform:scale(.988)}
+.pcard .fill{position:absolute;left:0;top:0;bottom:0;background:var(--hl-soft);opacity:.75;
+  transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.pcard.done .fill{background:var(--go-soft);opacity:1}
+.pcard.over .fill{background:var(--warn-soft);opacity:1}
+.pcard .tick{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.pcard .tick i{position:absolute;bottom:5px;left:3px;font-style:normal;font-size:9px;color:var(--mute);white-space:nowrap;
+  font-family:var(--mono)}
+.pcard .body{position:relative}
+.pcard .row1{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.pcard .nm{font-weight:700;font-size:14px;letter-spacing:-.02em}
+.pcard .l4{font-family:var(--mono);font-size:11px;color:var(--mute)}
+.pcard .amt{font-size:22px;font-weight:700}
+.pcard .amt span{font-size:12px;font-weight:600;color:var(--ink-2);margin-left:2px}
+.pcard .msg{font-size:12px;color:var(--ink-2);margin-top:5px;font-weight:500}
+.pcard .msg b{font-weight:700}
+.badge{font-size:10px;font-weight:800;padding:3px 7px;border-radius:6px;letter-spacing:-.01em;margin-left:auto}
+.b-go{background:var(--go);color:#fff}
+.b-warn{background:var(--warn);color:#fff}
+.b-idle{background:var(--paper);color:var(--ink-2);border:1px solid var(--line)}
+.b-hl{background:var(--hl);color:var(--ink)}
+
+/* ── 공통 카드/리스트 ─────────────────── */
+.box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px}
+.box+.box{margin-top:11px}
+.tx{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
+.tx:last-child{border-bottom:0;padding-bottom:0}
+.tx:first-child{padding-top:0}
+.tx .ico{width:34px;height:34px;border-radius:10px;background:var(--paper-2);display:grid;place-items:center;font-size:15px;flex:none}
+.tx .mid{flex:1;min-width:0}
+.tx .mch{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx .meta{font-size:11px;color:var(--mute);margin-top:2px}
+.tx .val{font-weight:700;font-size:14px;text-align:right;white-space:nowrap}
+.tx .val small{display:block;font-size:10px;font-weight:600;color:var(--warn);margin-top:2px}
+.tx.cx .mch,.tx.cx .val{text-decoration:line-through;color:var(--mute)}
+
+/* ── 버튼/폼 ─────────────────────────── */
+.btn{border:0;border-radius:11px;padding:12px 15px;font-weight:700;font-size:14px;cursor:pointer;
+  background:var(--ink);color:#fff;width:100%;letter-spacing:-.02em}
+.btn:active{opacity:.85}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.hl{background:var(--hl);color:var(--ink)}
+.btn.sm{width:auto;padding:8px 13px;font-size:13px;border-radius:9px}
+.btn.go{background:var(--go);color:#fff}
+.btnrow{display:flex;gap:8px;margin-top:11px}
+label.f{display:block;margin-bottom:11px}
+label.f span{display:block;font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:5px}
+input.i,select.i,textarea.i{width:100%;background:var(--paper-2);border:1px solid var(--line);border-radius:10px;
+  padding:11px 12px;outline:none}
+input.i:focus,select.i:focus,textarea.i:focus{border-color:var(--ink);background:#fff}
+textarea.i{min-height:112px;resize:vertical;font-family:var(--mono);font-size:12.5px;line-height:1.55}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.sw:last-child{border-bottom:0}
+.sw .t{font-weight:600;font-size:14px}
+.sw .d{font-size:11.5px;color:var(--mute);margin-top:3px;line-height:1.45}
+.toggle{width:46px;height:27px;border-radius:99px;background:var(--line);position:relative;flex:none;cursor:pointer;transition:background .18s}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;
+  transition:transform .18s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on{background:var(--go)}
+.toggle.on::after{transform:translateX(19px)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:11.5px;font-weight:600;padding:6px 10px;border-radius:8px;background:var(--paper-2);
+  border:1px solid var(--line);cursor:pointer}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* ── 최적화 액션 ─────────────────────── */
+.act{border-left:3px solid var(--line);padding:2px 0 2px 13px;margin-bottom:16px}
+.act.over{border-color:var(--warn)}
+.act.fill-need{border-color:var(--hl)}
+.act.ok{border-color:var(--go)}
+.act h4{margin:0 0 5px;font-size:14.5px;font-weight:700;letter-spacing:-.02em}
+.act p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.55}
+.act .save{display:inline-block;margin-top:7px;font-size:12px;font-weight:800;background:var(--hl);
+  padding:4px 8px;border-radius:6px}
+
+/* ── 차트 ────────────────────────────── */
+.bars{display:flex;align-items:flex-end;gap:7px;height:124px;margin:6px 0 8px}
+.bars .b{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px}
+.bars .b i{width:100%;background:var(--ink);border-radius:5px 5px 2px 2px;min-height:3px;display:block;font-style:normal}
+.bars .b.cur i{background:var(--hl)}
+.bars .b em{font-style:normal;font-size:10px;color:var(--mute);font-family:var(--mono)}
+.hbar{margin-bottom:11px}
+.hbar .l{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+.hbar .l b{font-weight:700}
+.hbar .l span{color:var(--mute);font-family:var(--mono)}
+.hbar .t{height:7px;border-radius:99px;background:var(--paper-2);overflow:hidden}
+.hbar .t i{display:block;height:100%;background:var(--ink);border-radius:99px}
+
+/* ── 하단 탭 ─────────────────────────── */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:rgba(255,255,255,.94);
+  backdrop-filter:blur(14px);border-top:1px solid var(--line);padding-bottom:var(--safe-b)}
+.tabbar .wrap{display:flex;height:62px}
+.tabbar button{flex:1;background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;color:var(--mute);font-size:10.5px;font-weight:600;cursor:pointer;padding:0}
+.tabbar button em{font-style:normal;font-size:18px;line-height:1;filter:grayscale(1) opacity(.55)}
+.tabbar button.on{color:var(--ink)}
+.tabbar button.on em{filter:none}
+.tabbar button.on span{font-weight:800}
+
+/* ── 시트/모달 ───────────────────────── */
+.sheet{position:fixed;inset:0;z-index:60;display:none}
+.sheet.open{display:block}
+.sheet .bg{position:absolute;inset:0;background:rgba(16,27,45,.42)}
+.sheet .panel{position:absolute;left:0;right:0;bottom:0;max-height:92vh;overflow:auto;background:var(--paper);
+  border-radius:20px 20px 0 0;padding:8px 16px calc(22px + var(--safe-b));animation:up .26s cubic-bezier(.2,.8,.2,1)}
+.sheet .panel .grab{width:38px;height:4px;border-radius:99px;background:var(--line);margin:6px auto 14px}
+@keyframes up{from{transform:translateY(22px);opacity:.6}to{transform:none;opacity:1}}
+.sheet h3{margin:0 0 3px;font-size:19px;font-weight:800;letter-spacing:-.04em}
+.sheet .sh-sub{color:var(--mute);font-size:12.5px;margin:0 0 16px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + var(--safe-b));z-index:80;
+  background:var(--ink);color:#fff;padding:11px 16px;border-radius:11px;font-size:13px;font-weight:600;
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:88vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(-4px)}
+.empty{text-align:center;padding:34px 16px;color:var(--mute)}
+.empty .em{font-size:30px;margin-bottom:10px;filter:grayscale(.3)}
+.empty p{font-size:13.5px;margin:0 0 14px;line-height:1.6}
+.note{font-size:11.5px;color:var(--mute);line-height:1.55;margin-top:10px}
+.hidden{display:none!important}
+.view{display:none}
+.view.on{display:block;animation:fade .2s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:6px}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand"><span class="dot"></span>실적ON</div>
+    <div class="cycle" id="cycleLabel">—</div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ══ 대시보드 ══ -->
+  <section class="view on" id="v-home">
+    <div id="heroSlot"></div>
+    <div class="sec">카드별 실적 진행률</div>
+    <div id="cardGauges"></div>
+    <div class="sec">최근 결제</div>
+    <div class="box" id="recentBox"></div>
+    <p class="note">모든 계산은 이 기기 안에서만 이뤄집니다. 결제 내역은 서버로 전송되지 않습니다.</p>
+  </section>
+
+  <!-- ══ 내 카드 ══ -->
+  <section class="view" id="v-cards">
+    <h1 class="view-title">내 카드</h1>
+    <p class="view-sub">실적 구간, 연회비, 혜택, 실적 제외 항목을 카드별로 관리합니다.</p>
+    <div id="cardList"></div>
+    <div class="btnrow">
+      <button class="btn" onclick="openCard()">카드 추가</button>
+      <button class="btn ghost" onclick="openPresets()">템플릿에서 고르기</button>
+    </div>
+    <p class="note">구간·혜택 금액은 카드사 공지 기준으로 직접 확인해 입력하세요. 카드사 정책은 수시로 바뀝니다.</p>
+  </section>
+
+  <!-- ══ 문자분석 ══ -->
+  <section class="view" id="v-sms">
+    <h1 class="view-title">문자분석</h1>
+    <p class="view-sub">결제 문자를 읽어 카드·금액·가맹점·할부를 뽑아냅니다.</p>
+
+    <div class="box">
+      <div class="sw">
+        <div><div class="t">공유 시트로 받기</div><div class="d">문자 앱에서 공유 → 실적ON을 선택하면 자동으로 분석합니다. 홈 화면에 설치하면 켜집니다.</div></div>
+        <div class="toggle" id="tgShare" onclick="toggleSetting('share',this)"></div>
+      </div>
+      <div class="sw">
+        <div><div class="t">붙여넣기 자동 감지</div><div class="d">앱으로 돌아올 때 클립보드에 결제 문자가 있으면 바로 물어봅니다.</div></div>
+        <div class="toggle" id="tgClip" onclick="toggleSetting('clipboard',this)"></div>
+      </div>
+      <div class="sw">
+        <div><div class="t">중복 결제 건너뛰기</div><div class="d">같은 카드·금액·시각이 이미 있으면 저장하지 않습니다.</div></div>
+        <div class="toggle" id="tgDup" onclick="toggleSetting('dedupe',this)"></div>
+      </div>
+    </div>
+
+    <div class="sec">분석 현황</div>
+    <div class="box">
+      <div class="g3" style="text-align:center">
+        <div><div class="num" style="font-size:22px;font-weight:700" id="stTotal">0</div><div class="d" style="font-size:11px;color:var(--mute)">분석 시도</div></div>
+        <div><div class="num" style="font-size:22px;font-weight:700" id="stOk">0</div><div class="d" style="font-size:11px;color:var(--mute)">인식 성공</div></div>
+        <div><div class="num" style="font-size:22px;font-weight:700" id="stAcc">0%</div><div class="d" style="font-size:11px;color:var(--mute)">정확도</div></div>
+      </div>
+    </div>
+
+    <div class="sec">문자 넣기</div>
+    <div class="box">
+      <textarea class="i" id="smsInput" placeholder="결제 문자를 붙여넣으세요. 여러 건은 빈 줄로 구분하면 한 번에 처리합니다.&#10;&#10;예)&#10;[Web발신]&#10;신한카드(1234)승인 홍*동&#10;12,000원 일시불&#10;07/24 14:23 스타벅스 강남점&#10;누적 742,300원"></textarea>
+      <div class="btnrow">
+        <button class="btn" onclick="ingestInput()">분석해서 저장</button>
+        <button class="btn ghost sm" style="flex:none" onclick="pasteFromClipboard()">붙여넣기</button>
+      </div>
+    </div>
+
+    <div class="sec">미인식 문자 <span id="unrecCount" class="num" style="font-weight:700;color:var(--warn)"></span></div>
+    <div id="unrecBox"></div>
+
+    <div class="sec">거래 내역</div>
+    <div class="box" id="allTx"></div>
+  </section>
+
+  <!-- ══ 최적화 ══ -->
+  <section class="view" id="v-opt">
+    <h1 class="view-title">최적화</h1>
+    <p class="view-sub">넘친 카드는 멈추고, 모자란 카드로 옮깁니다.</p>
+    <div id="optBox"></div>
+  </section>
+
+  <!-- ══ 분석 ══ -->
+  <section class="view" id="v-stats">
+    <h1 class="view-title">분석</h1>
+    <p class="view-sub">쓰는 방식이 보이면, 어떤 카드를 남길지도 보입니다.</p>
+    <div id="statsBox"></div>
+  </section>
+
+</main>
+
+<nav class="tabbar">
+  <div class="wrap">
+    <button class="on" data-v="home" onclick="go('home')"><em>📊</em><span>대시보드</span></button>
+    <button data-v="cards" onclick="go('cards')"><em>💳</em><span>내 카드</span></button>
+    <button data-v="sms" onclick="go('sms')"><em>📩</em><span>문자분석</span></button>
+    <button data-v="opt" onclick="go('opt')"><em>🎯</em><span>최적화</span></button>
+    <button data-v="stats" onclick="go('stats')"><em>📈</em><span>분석</span></button>
+  </div>
+</nav>
+
+<!-- 시트 -->
+<div class="sheet" id="sheet">
+  <div class="bg" onclick="closeSheet()"></div>
+  <div class="panel"><div class="grab"></div><div id="sheetBody"></div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   실적ON — 기기 내 처리 신용카드 실적 관리
+   저장소: localStorage (사용 불가 환경에서는 메모리로 대체)
+   ══════════════════════════════════════════════════════ */
+
+/* ── 저장소 래퍼 ─────────────────────────────────── */
+const mem = {};
+const store = {
+  get(k){ try{ const v = localStorage.getItem(k); return v===null?(k in mem?mem[k]:null):v; }catch(e){ return k in mem?mem[k]:null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} mem[k]=v; }
+};
+
+/* ── 상태 ────────────────────────────────────────── */
+const DEFAULTS = { share:true, clipboard:false, dedupe:true, cycleStart:1 };
+let DB = { cards:[], txns:[], unrec:[], stats:{total:0,ok:0}, settings:{...DEFAULTS} };
+
+function load(){
+  const raw = store.get('siljeokon.v1');
+  if(raw){ try{ DB = Object.assign(DB, JSON.parse(raw)); DB.settings = Object.assign({...DEFAULTS}, DB.settings||{}); }catch(e){} }
+}
+function save(){ store.set('siljeokon.v1', JSON.stringify(DB)); }
+const uid = () => Math.random().toString(36).slice(2,10);
+
+/* ── 카드사 사전 ─────────────────────────────────── */
+const ISSUERS = [
+  {key:'shinhan', name:'신한카드',   re:/신한/},
+  {key:'kb',      name:'KB국민카드', re:/국민카드|KB국민|KB카드|KB국민카드/i},
+  {key:'samsung', name:'삼성카드',   re:/삼성/},
+  {key:'hyundai', name:'현대카드',   re:/현대/},
+  {key:'lotte',   name:'롯데카드',   re:/롯데/},
+  {key:'woori',   name:'우리카드',   re:/우리/},
+  {key:'hana',    name:'하나카드',   re:/하나/},
+  {key:'nh',      name:'NH농협카드', re:/농협|NH/i},
+  {key:'bc',      name:'BC카드',     re:/\bBC\b|비씨/i},
+  {key:'ibk',     name:'IBK기업',    re:/기업은행|IBK/i},
+  {key:'kakao',   name:'카카오뱅크', re:/카카오뱅크|카뱅/},
+  {key:'toss',    name:'토스뱅크',   re:/토스/},
+  {key:'etc',     name:'기타',       re:/카드/}
+];
+
+/* ── 업종 사전 ───────────────────────────────────── */
+const CATS = [
+  ['편의점','🏪',['GS25','CU','씨유','세븐일레븐','7-ELEVEN','이마트24','미니스톱','편의점']],
+  ['카페','☕',['스타벅스','STARBUCKS','투썸','이디야','메가커피','메가엠지씨','컴포즈','빽다방','할리스','폴바셋','커피','카페','파스쿠찌','탐앤탐스']],
+  ['음식점','🍚',['배달의민족','배민','요기요','쿠팡이츠','식당','국밥','치킨','피자','고기','김밥','분식','맘스터치','버거','맥도날드','롯데리아','KFC','포차','일식','중화','한식','횟집','족발','곱창']],
+  ['마트/식료품','🛒',['이마트','홈플러스','롯데마트','코스트코','하나로','마켓컬리','컬리','오아시스','농협마트','슈퍼','청과','정육']],
+  ['온라인쇼핑','📦',['쿠팡','COUPANG','11번가','G마켓','지마켓','옥션','SSG','네이버페이','스마트스토어','무신사','알리','테무','인터파크','위메프','티몬','29CM']],
+  ['교통','🚇',['택시','카카오T','버스','지하철','철도','코레일','SRT','고속','주차','하이패스','티머니','캐시비','대중교통','렌터카']],
+  ['주유/충전','⛽',['주유','오일뱅크','칼텍스','SK에너지','S-OIL','에쓰오일','충전소','EV','전기차','GS칼텍스']],
+  ['통신','📱',['SKT','KT','LG유플러스','LGU','유플러스','통신','인터넷','알뜰폰']],
+  ['의료/약국','💊',['의원','병원','약국','한의원','치과','메디','클리닉','건강검진']],
+  ['문화/구독','🎬',['CGV','메가박스','롯데시네마','넷플릭스','NETFLIX','유튜브','YOUTUBE','스포티파이','왓챠','티빙','쿠팡플레이','서점','교보','예스24','알라딘','디즈니']],
+  ['백화점/아울렛','🏬',['백화점','아울렛','스타필드','신세계','롯데월드','현대아울렛','프리미엄아울렛']],
+  ['생활/뷰티','🧴',['올리브영','다이소','화장품','미용실','헤어','네일','세탁','문구']],
+  ['보험/금융','🏦',['보험','생명','손해','캐피탈','증권','이자','대출']],
+  ['공과금/세금','🧾',['국세','지방세','세금','관리비','전기','수도','가스','한국전력','도시가스','국민연금','건강보험','고용보험','등록금','과태료','통행료납부']],
+  ['상품권/충전','🎟️',['상품권','기프트','문화상품권','선불','충전','페이충전','머니충전','기프티']],
+  ['기타','•',[]]
+];
+const CAT_NAMES = CATS.map(c=>c[0]);
+const CAT_ICON = Object.fromEntries(CATS.map(c=>[c[0],c[1]]));
+function classify(merchant){
+  const m = (merchant||'').toUpperCase();
+  for(const [name,ico,keys] of CATS){ for(const k of keys){ if(m.includes(k.toUpperCase())) return name; } }
+  return '기타';
+}
+/* 대부분의 카드사가 공통으로 실적에서 빼는 업종 */
+const DEFAULT_EXCLUDE = ['공과금/세금','상품권/충전','보험/금융'];
+
+/* ── 문자 파서 ───────────────────────────────────── */
+function parseSMS(raw){
+  const src = String(raw||'');
+  let t = src.replace(/\[(Web발신|국외발신|국제발신|광고)\]/g,'').replace(/\r/g,'');
+  const flat = t.replace(/\s+/g,' ').trim();
+  if(flat.length < 6) return {ok:false, reason:'내용이 너무 짧습니다', raw:src};
+
+  const isCancel = /(취소|승인취소|매입취소)/.test(flat);
+  const isApprove = /(승인|결제|사용)/.test(flat);
+  /* 청구·안내·광고성 문자는 걸러내고, 그 밖에는 금액 인식으로 판단한다 */
+  const isNotice = /(청구금액|명세서|안내드립|이벤트|무이자\s*행사|광고|한도\s*상향|연체)/.test(flat);
+  if(isNotice && !isApprove) return {ok:false, reason:'결제 문자가 아닌 안내 문자입니다', raw:src};
+
+  const iss = ISSUERS.find(i=>i.re.test(flat));
+  if(!iss) return {ok:false, reason:'카드사를 찾지 못했습니다', raw:src};
+
+  /* 금액: 누적/잔여/한도/포인트 앞에 붙은 숫자는 제외 */
+  const skipBefore = /(누적|누계|잔액|잔여|한도|포인트|합계|총|적립|월)\s*[^0-9]{0,4}$/;
+  const re = /([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{3,9})\s*원/g;
+  let m, amount=null, cumulative=null;
+  while((m = re.exec(flat))!==null){
+    const val = parseInt(m[1].replace(/,/g,''),10);
+    const before = flat.slice(Math.max(0,m.index-10), m.index);
+    if(skipBefore.test(before)){ if(cumulative===null) cumulative=val; continue; }
+    if(amount===null) amount = val;
+  }
+  if(amount===null) return {ok:false, reason:'결제 금액을 찾지 못했습니다', raw:src};
+
+  const l4m = flat.match(/[(\[]?(\d{4})[)\]]/) || flat.match(/카드\s*(\d{4})/);
+  const last4 = l4m ? l4m[1] : '';
+
+  /* 날짜/시각 */
+  const dm = flat.match(/(\d{1,2})\s*[\/\.월]\s*(\d{1,2})/);
+  const tm = flat.match(/(\d{1,2}):(\d{2})/);
+  const now = new Date();
+  let year = now.getFullYear(), mo = now.getMonth()+1, da = now.getDate();
+  if(dm){ mo = +dm[1]; da = +dm[2]; if(mo > now.getMonth()+2) year -= 1; }
+  const hh = tm ? +tm[1] : 12, mi = tm ? +tm[2] : 0;
+  const date = new Date(year, mo-1, da, hh, mi);
+  if(isNaN(date.getTime())) return {ok:false, reason:'날짜를 읽지 못했습니다', raw:src};
+
+  /* 할부 */
+  const inst = (flat.match(/(\d{1,2})\s*개월/) || [])[1];
+  const installment = inst ? +inst : 0;
+
+  /* 가맹점 */
+  let s = flat
+    .replace(/(누적|누계|잔액|잔여|한도|포인트|적립|합계)[^0-9]{0,6}[0-9,]+\s*원?/g,'')
+    .replace(/(총승인금액|이용금액|결제예정)/g,'');
+  let merchant = '';
+  const patterns = [
+    /(?:일시불|\d{1,2}개월)\s*(?:\d{1,2}[\/\.]\d{1,2})?\s*(?:\d{1,2}:\d{2})?\s*(.+)$/,
+    /\d{1,2}:\d{2}\s*(.+)$/,
+    /\d{1,2}[\/\.]\d{1,2}\s*(.+)$/
+  ];
+  for(const p of patterns){ const r = s.match(p); if(r && r[1] && r[1].trim().length>1){ merchant = r[1]; break; } }
+  merchant = merchant
+    .replace(/(승인|취소|일시불|완료|정상|님)/g,'')
+    .replace(/[0-9,]+원/g,'')
+    .replace(/^[\s\-·,\.]+|[\s\-·,\.]+$/g,'')
+    .trim();
+  if(merchant.length > 26) merchant = merchant.slice(0,26);
+  const needsReview = merchant.length < 2;
+  if(needsReview) merchant = '가맹점 미상';
+
+  const category = classify(merchant);
+  return {
+    ok:true, needsReview,
+    txn:{
+      id:uid(), issuer:iss.key, issuerName:iss.name, last4,
+      amount: isCancel ? -amount : amount,
+      canceled:isCancel, date:date.toISOString(), merchant, category,
+      installment, cumulative, cardId:null, raw:src, source:'sms', excludedManual:null
+    }
+  };
+}
+
+/* 문자 여러 건 분리: 빈 줄 또는 카드사 키워드로 시작하는 새 블록 */
+function splitMessages(text){
+  const blocks = String(text).split(/\n\s*\n+/).map(s=>s.trim()).filter(Boolean);
+  const out = [];
+  for(const b of blocks){
+    if(b.split('\n').length<=6){ out.push(b); continue; }
+    const lines = b.split('\n'); let cur=[];
+    for(const ln of lines){
+      if(/\[Web발신\]/.test(ln) && cur.length){ out.push(cur.join('\n')); cur=[ln]; }
+      else cur.push(ln);
+    }
+    if(cur.length) out.push(cur.join('\n'));
+  }
+  return out;
+}
+
+/* ── 카드 매칭 ───────────────────────────────────── */
+function matchCard(txn){
+  const c1 = DB.cards.find(c=>c.issuer===txn.issuer && c.last4 && c.last4===txn.last4);
+  if(c1) return c1.id;
+  const same = DB.cards.filter(c=>c.issuer===txn.issuer);
+  if(same.length===1) return same[0].id;
+  return null;
+}
+
+/* ── 실적 계산 ───────────────────────────────────── */
+function cycleRange(d=new Date()){
+  const s = DB.settings.cycleStart||1;
+  let start = new Date(d.getFullYear(), d.getMonth(), s, 0,0,0);
+  if(d.getDate() < s) start = new Date(d.getFullYear(), d.getMonth()-1, s, 0,0,0);
+  const end = new Date(start.getFullYear(), start.getMonth()+1, s, 0,0,0);
+  return {start, end};
+}
+function isExcluded(txn, card){
+  if(txn.excludedManual!==null && txn.excludedManual!==undefined) return txn.excludedManual;
+  const ex = (card && card.excludes) ? card.excludes : DEFAULT_EXCLUDE;
+  return ex.includes(txn.category);
+}
+function cardTxns(cardId, range){
+  const {start,end} = range || cycleRange();
+  return DB.txns.filter(t=>{
+    const d = new Date(t.date);
+    return t.cardId===cardId && d>=start && d<end;
+  }).sort((a,b)=> new Date(b.date)-new Date(a.date));
+}
+function perf(card, range){
+  const list = cardTxns(card.id, range);
+  let sum = 0, excluded = 0;
+  for(const t of list){ if(isExcluded(t,card)) excluded += t.amount; else sum += t.amount; }
+  const tiers = (card.tiers||[]).slice().sort((a,b)=>a.min-b.min);
+  let cur = null, next = null;
+  for(const t of tiers){ if(sum >= t.min) cur = t; }
+  next = tiers.find(t=> sum < t.min) || null;
+  const top = tiers[tiers.length-1] || null;
+  const cap = top ? top.min : Math.max(sum,1);
+  const progress = Math.min(100, Math.round(sum / cap * 100));
+  const overflow = (top && sum > top.min) ? sum - top.min : 0;
+  return {sum, excluded, list, tiers, cur, next, top, progress, overflow,
+          benefit: cur ? (cur.benefit||0) : 0,
+          nextGain: next ? ((next.benefit||0) - (cur?cur.benefit||0:0)) : 0};
+}
+function daysLeft(){
+  const {end} = cycleRange();
+  return Math.max(1, Math.ceil((end - new Date())/86400000));
+}
+
+/* ── 최적화 엔진 ─────────────────────────────────── */
+function optimize(){
+  const cards = DB.cards.filter(c=>c.active!==false);
+  const rows = cards.map(c=>({card:c, p:perf(c)}));
+  const short = rows.filter(r=>r.p.next).sort((a,b)=>
+    (a.p.next.min - a.p.sum) - (b.p.next.min - b.p.sum));
+  const target = short[0] || null;
+  const acts = [];
+
+  for(const r of rows){
+    const {card,p} = r;
+    const need = p.next ? p.next.min - p.sum : 0;
+    if(!p.next && p.top){
+      const alt = short.find(s=>s.card.id!==card.id);
+      acts.push({
+        type:'over', card, p,
+        title:`${card.name} — 최고 구간 달성, 지금부터는 손해`,
+        body: alt
+          ? `이번 주기 ${won(p.sum)}원으로 최고 구간(${won(p.top.min)}원)을 ${won(p.overflow)}원 넘겼습니다. 남은 결제는 <b>${alt.card.name}</b>${josa(alt.card.name,['으로','로']).slice(alt.card.name.length)} 옮기세요. ${won(alt.p.next.min - alt.p.sum)}원만 더 쓰면 ${alt.p.next.label} 구간이 열립니다.`
+          : `이번 주기 ${won(p.sum)}원으로 최고 구간을 ${won(p.overflow)}원 넘겼습니다. 더 써도 추가 혜택이 없으니 다른 카드를 등록해 분산하세요.`,
+        save: alt ? alt.p.nextGain : 0
+      });
+    } else if(p.next){
+      const perDay = Math.ceil(need / daysLeft() / 1000)*1000;
+      const reachable = p.sum > 0 ? (p.sum / Math.max(1,(30-daysLeft()))) * daysLeft() >= need*0.8 : false;
+      acts.push({
+        type: reachable ? 'fill-need' : 'ok', card, p,
+        title: `${card.name} — ${p.next.label} 구간까지 ${won(need)}원`,
+        body: `남은 ${daysLeft()}일 동안 하루 ${won(perDay)}원씩 쓰면 도달합니다.` +
+              (reachable ? ` 지금 속도면 달성 가능합니다.` : ` 지금 속도로는 빠듯합니다. 무리라면 이번 주기는 접고 다른 카드에 집중하세요.`) +
+              (p.nextGain>0 ? ` 달성 시 월 ${won(p.nextGain)}원의 혜택이 늘어납니다.` : ''),
+        save: reachable ? p.nextGain : 0
+      });
+    }
+  }
+  acts.sort((a,b)=> (a.type==='over'?-1:1) - (b.type==='over'?-1:1) || b.save - a.save);
+  return {acts, rows, target};
+}
+function bestCardFor(category){
+  let best = null;
+  for(const c of DB.cards.filter(c=>c.active!==false)){
+    const r = (c.rates||[]).find(r=>r.category===category);
+    if(r && (!best || r.rate > best.rate)) best = {card:c, rate:r.rate, cap:r.cap};
+  }
+  return best;
+}
+
+/* ── 유틸 ────────────────────────────────────────── */
+const won = n => Math.round(n||0).toLocaleString('ko-KR');
+/* 받침 유무에 따라 조사를 고른다 — "신한카드는" / "국민카드은" 같은 어색함 방지 */
+function josa(word, pair){
+  const s = String(word||''); if(!s) return '';
+  const ch = s.charCodeAt(s.length-1);
+  const isHangul = ch>=0xAC00 && ch<=0xD7A3;
+  const jong = isHangul ? (ch-0xAC00)%28 : -1;
+  /* '으로/로'는 ㄹ 받침(jong 8)도 '로'를 쓴다 */
+  if(pair[1]==='로' && jong===8) return s + pair[1];
+  const hasBatchim = isHangul ? jong!==0 : /[0-9lmnrLMNR]$/.test(s.slice(-1));
+  return s + (hasBatchim ? pair[0] : pair[1]);
+}
+const man = n => (n>=10000 ? (n/10000).toFixed(n%10000?1:0).replace(/\.0$/,'')+'만' : won(n));
+function fmtDate(iso){ const d=new Date(iso); return `${d.getMonth()+1}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('on'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('on'),2100); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ── 렌더: 대시보드 ──────────────────────────────── */
+function renderHome(){
+  const {start,end} = cycleRange();
+  document.getElementById('cycleLabel').textContent =
+    `${start.getMonth()+1}/${start.getDate()} ~ ${new Date(end-1).getMonth()+1}/${new Date(end-1).getDate()} · D-${daysLeft()}`;
+
+  const cards = DB.cards.filter(c=>c.active!==false);
+  const hero = document.getElementById('heroSlot');
+  if(!cards.length){
+    hero.innerHTML = `<div class="empty"><div class="em">💳</div>
+      <p>카드를 등록하면 이번 주기에 어떤 카드를 써야 하는지<br>한 장으로 알려드립니다.</p>
+      <button class="btn" onclick="openPresets()">템플릿에서 카드 추가</button>
+      <div style="height:8px"></div>
+      <button class="btn ghost" onclick="loadDemo()">샘플 데이터로 둘러보기</button></div>`;
+    document.getElementById('cardGauges').innerHTML='';
+    document.getElementById('recentBox').innerHTML='<div class="empty" style="padding:18px"><p style="margin:0">아직 결제 내역이 없습니다.</p></div>';
+    return;
+  }
+
+  const {acts, target} = optimize();
+  const over = acts.find(a=>a.type==='over');
+  const pick = target ? target.card : cards[0];
+  const pickP = target ? target.p : perf(cards[0]);
+  const why = over
+    ? `${josa(over.card.name,['은','는'])} 최고 구간을 넘겼습니다. 이제 여기로 옮기세요.`
+    : (pickP.next ? `${pickP.next.label} 구간까지 ${won(pickP.next.min - pickP.sum)}원 남아 가장 가깝습니다.`
+                  : `모든 카드가 구간을 채웠습니다. 무리해서 더 쓸 필요 없습니다.`);
+  const totalBenefit = cards.reduce((s,c)=>s+perf(c).benefit,0);
+  const totalSpend = cards.reduce((s,c)=>s+perf(c).sum,0);
+
+  hero.innerHTML = `<div class="hero">
+    <div class="mark"></div>
+    <div class="eyebrow">지금 이 카드로</div>
+    <div class="pick">${esc(pick.name)}</div>
+    <p class="why">${why}</p>
+    <div class="stat">
+      <div>이번 주기 실적<b class="num">${won(totalSpend)}원</b></div>
+      <div>확보한 혜택<b class="num">${won(totalBenefit)}원</b></div>
+      <div>남은 날<b class="num">${daysLeft()}일</b></div>
+    </div>
+  </div>`;
+
+  document.getElementById('cardGauges').innerHTML = cards.map(c=>gaugeHTML(c)).join('');
+
+  const recent = DB.txns.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,6);
+  document.getElementById('recentBox').innerHTML = recent.length
+    ? recent.map(t=>txHTML(t)).join('')
+    : '<div class="empty" style="padding:18px"><p style="margin:0">문자분석 탭에서 결제 문자를 넣어보세요.</p></div>';
+}
+
+function gaugeHTML(c){
+  const p = perf(c);
+  const cls = p.overflow>0 ? 'over' : (!p.next && p.top ? 'done' : '');
+  const badge = p.overflow>0 ? '<span class="badge b-warn">초과</span>'
+    : (!p.next && p.top ? '<span class="badge b-go">달성</span>'
+    : (p.cur ? `<span class="badge b-hl">${esc(p.cur.label)}</span>` : '<span class="badge b-idle">미달</span>'));
+  const cap = p.top ? p.top.min : Math.max(p.sum,1);
+  const ticks = (p.tiers||[]).map(t=>{
+    const x = Math.min(100, t.min/cap*100);
+    return `<span class="tick" style="left:${x}%"><i>${esc(t.label)}</i></span>`;
+  }).join('');
+  const msg = p.overflow>0
+    ? `최고 구간을 <b>${won(p.overflow)}원</b> 넘겼습니다`
+    : (p.next ? `${esc(p.next.label)} 구간까지 <b>${won(p.next.min - p.sum)}원</b>`
+              : (p.top ? '모든 구간 달성' : '실적 구간이 없는 카드'));
+  return `<div class="pcard ${cls}" onclick="openCard('${c.id}')">
+    <div class="fill" style="width:${p.progress}%"></div>${ticks}
+    <div class="body">
+      <div class="row1"><span class="nm">${esc(c.name)}</span>
+        <span class="l4">${c.last4?'···'+esc(c.last4):''}</span>${badge}</div>
+      <div class="amt num">${won(p.sum)}<span>원</span></div>
+      <div class="msg">${msg}${p.excluded>0?` · 실적 제외 ${won(p.excluded)}원`:''}</div>
+    </div>
+  </div>`;
+}
+
+function txHTML(t){
+  const c = DB.cards.find(x=>x.id===t.cardId);
+  const ex = isExcluded(t,c);
+  return `<div class="tx ${t.canceled?'cx':''}" onclick="openTx('${t.id}')">
+    <div class="ico">${CAT_ICON[t.category]||'•'}</div>
+    <div class="mid">
+      <div class="mch">${esc(t.merchant)}</div>
+      <div class="meta">${fmtDate(t.date)} · ${esc(c?c.name:t.issuerName)}${t.installment?` · ${t.installment}개월`:''}</div>
+    </div>
+    <div class="val num">${t.amount<0?'-':''}${won(Math.abs(t.amount))}원
+      ${ex?'<small>실적 제외</small>':''}${!t.cardId?'<small>카드 미지정</small>':''}</div>
+  </div>`;
+}
+
+/* ── 렌더: 내 카드 ───────────────────────────────── */
+function renderCards(){
+  const el = document.getElementById('cardList');
+  if(!DB.cards.length){
+    el.innerHTML = `<div class="empty"><div class="em">🗂️</div><p>등록된 카드가 없습니다.<br>실적 구간과 혜택을 넣으면 계산이 시작됩니다.</p></div>`;
+    return;
+  }
+  el.innerHTML = DB.cards.map(c=>{
+    const p = perf(c);
+    const tierTxt = (c.tiers||[]).map(t=>`${esc(t.label)} → ${won(t.benefit||0)}원`).join(' / ') || '구간 없음';
+    const exTxt = (c.excludes||DEFAULT_EXCLUDE).join(', ') || '없음';
+    const rateTxt = (c.rates||[]).map(r=>`${r.category} ${r.rate}%`).join(' · ') || '미입력';
+    return `<div class="box" style="margin-bottom:11px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <b style="font-size:15px;letter-spacing:-.03em">${esc(c.name)}</b>
+        <span class="l4 num" style="font-size:11px;color:var(--mute)">${c.last4?'···'+esc(c.last4):'뒷자리 미등록'}</span>
+        <button class="btn ghost sm" style="margin-left:auto" onclick="openCard('${c.id}')">편집</button>
+      </div>
+      <div class="hbar"><div class="l"><b>이번 주기 실적</b><span>${won(p.sum)}원</span></div>
+        <div class="t"><i style="width:${p.progress}%;background:${p.overflow>0?'var(--warn)':'var(--ink)'}"></i></div></div>
+      <div style="font-size:12.5px;color:var(--ink-2);line-height:1.75">
+        <div><b>실적 구간</b> · ${tierTxt}</div>
+        <div><b>연회비</b> · ${won(c.annualFee||0)}원</div>
+        <div><b>주요 적립</b> · ${esc(rateTxt)}</div>
+        <div><b>실적 제외</b> · ${esc(exTxt)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── 렌더: 문자분석 ──────────────────────────────── */
+function renderSms(){
+  document.getElementById('stTotal').textContent = DB.stats.total;
+  document.getElementById('stOk').textContent = DB.stats.ok;
+  document.getElementById('stAcc').textContent =
+    DB.stats.total ? Math.round(DB.stats.ok/DB.stats.total*100)+'%' : '0%';
+  ['share','clipboard','dedupe'].forEach(k=>{
+    const el = document.getElementById({share:'tgShare',clipboard:'tgClip',dedupe:'tgDup'}[k]);
+    el.classList.toggle('on', !!DB.settings[k]);
+  });
+
+  const ub = document.getElementById('unrecBox');
+  document.getElementById('unrecCount').textContent = DB.unrec.length ? DB.unrec.length+'건' : '';
+  ub.innerHTML = DB.unrec.length ? DB.unrec.map((u,i)=>`
+    <div class="box" style="margin-bottom:9px">
+      <div style="font-size:11.5px;color:var(--warn);font-weight:700;margin-bottom:6px">${esc(u.reason)}</div>
+      <div class="num" style="font-size:11.5px;color:var(--ink-2);white-space:pre-wrap;line-height:1.5">${esc(u.raw.slice(0,180))}</div>
+      <div class="btnrow">
+        <button class="btn ghost sm" onclick="openManual(${i})">직접 입력</button>
+        <button class="btn ghost sm" onclick="dropUnrec(${i})">삭제</button>
+      </div>
+    </div>`).join('')
+    : '<div class="box"><div style="font-size:13px;color:var(--mute)">인식하지 못한 문자가 없습니다.</div></div>';
+
+  const list = DB.txns.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,40);
+  document.getElementById('allTx').innerHTML = list.length ? list.map(txHTML).join('')
+    : '<div style="font-size:13px;color:var(--mute)">저장된 거래가 없습니다.</div>';
+}
+
+/* ── 렌더: 최적화 ────────────────────────────────── */
+function renderOpt(){
+  const el = document.getElementById('optBox');
+  if(!DB.cards.length){ el.innerHTML = `<div class="empty"><div class="em">🎯</div><p>카드를 먼저 등록해 주세요.</p></div>`; return; }
+  const {acts} = optimize();
+  const totalSave = acts.reduce((s,a)=>s+(a.save||0),0);
+  el.innerHTML = `
+  <div class="box" style="background:var(--ink);color:#fff;border-color:var(--ink)">
+    <div style="font-size:11px;letter-spacing:.12em;color:var(--hl);font-weight:700">이번 주기 조치로 얻을 수 있는 금액</div>
+    <div class="num" style="font-size:30px;font-weight:800;margin-top:6px">${won(totalSave)}<span style="font-size:15px">원</span></div>
+    <div style="font-size:12px;color:#AFBACD;margin-top:4px">남은 ${daysLeft()}일 안에 아래 순서대로 옮기면 됩니다.</div>
+  </div>
+  <div class="sec">해야 할 일</div>
+  ${acts.length ? acts.map((a,i)=>`
+    <div class="act ${a.type}">
+      <h4>${esc(a.title)}</h4>
+      <p>${a.body}</p>
+      ${a.save>0?`<span class="save num">+${won(a.save)}원</span>`:''}
+    </div>`).join('')
+    : '<div class="box"><div style="font-size:13px;color:var(--mute)">지금은 조치할 항목이 없습니다.</div></div>'}
+  <div class="sec">업종별로 꺼낼 카드</div>
+  <div class="box">${
+    CAT_NAMES.filter(c=>c!=='기타').map(cat=>{
+      const b = bestCardFor(cat);
+      return `<div class="tx"><div class="ico">${CAT_ICON[cat]}</div>
+        <div class="mid"><div class="mch">${cat}</div>
+        <div class="meta">${b?esc(b.card.name):'등록된 적립 조건 없음'}</div></div>
+        <div class="val num">${b?b.rate+'%':'—'}</div></div>`;
+    }).join('')
+  }</div>
+  <p class="note">적립률은 내 카드 화면에서 직접 입력한 값으로 계산합니다. 카드사 공지와 다르면 값을 수정하세요.</p>`;
+}
+
+/* ── 렌더: 분석 ──────────────────────────────────── */
+function renderStats(){
+  const el = document.getElementById('statsBox');
+  if(!DB.txns.length){ el.innerHTML = `<div class="empty"><div class="em">📈</div><p>결제 내역이 쌓이면 소비 패턴이 보입니다.</p></div>`; return; }
+
+  /* 최근 6개월 */
+  const now = new Date(); const months=[];
+  for(let i=5;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); months.push({y:d.getFullYear(),m:d.getMonth(),sum:0}); }
+  for(const t of DB.txns){ const d=new Date(t.date);
+    const f = months.find(x=>x.y===d.getFullYear()&&x.m===d.getMonth()); if(f) f.sum += t.amount; }
+  const mx = Math.max(...months.map(m=>m.sum),1);
+
+  /* 업종별 */
+  const {start,end} = cycleRange();
+  const byCat = {};
+  for(const t of DB.txns){ const d=new Date(t.date); if(d<start||d>=end) continue;
+    byCat[t.category] = (byCat[t.category]||0) + t.amount; }
+  const cats = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  const catMax = cats.length?cats[0][1]:1;
+  const catTotal = cats.reduce((s,c)=>s+c[1],0);
+
+  /* 연간 예측 */
+  const monthlyBenefit = DB.cards.reduce((s,c)=>s+perf(c).benefit,0);
+  const {acts} = optimize();
+  const extra = acts.reduce((s,a)=>s+(a.save||0),0);
+  const fees = DB.cards.reduce((s,c)=>s+(c.annualFee||0),0);
+  const yearNow = monthlyBenefit*12 - fees;
+  const yearOpt = (monthlyBenefit+extra)*12 - fees;
+
+  el.innerHTML = `
+  <div class="sec">월별 소비</div>
+  <div class="box">
+    <div class="bars">${months.map((m,i)=>`
+      <div class="b ${i===months.length-1?'cur':''}">
+        <i style="height:${Math.max(3,m.sum/mx*100)}%"></i>
+        <em>${m.m+1}월</em>
+      </div>`).join('')}</div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2)">
+      <span>이번 달</span><b class="num">${won(months[months.length-1].sum)}원</b></div>
+  </div>
+
+  <div class="sec">이번 주기 업종별</div>
+  <div class="box">${cats.length? cats.map(([c,v])=>{
+      const b = bestCardFor(c);
+      return `<div class="hbar">
+        <div class="l"><b>${CAT_ICON[c]||'•'} ${c}${b?` · ${esc(b.card.name)} 추천`:''}</b>
+        <span>${won(v)}원 (${Math.round(v/catTotal*100)}%)</span></div>
+        <div class="t"><i style="width:${Math.max(2,v/catMax*100)}%"></i></div></div>`;
+    }).join('') : '<div style="font-size:13px;color:var(--mute)">이번 주기 내역이 없습니다.</div>'}
+  </div>
+
+  <div class="sec">연간 전망</div>
+  <div class="box">
+    <div class="tx"><div class="ico">📅</div><div class="mid"><div class="mch">지금 방식 그대로</div>
+      <div class="meta">현재 달성 구간 기준 · 연회비 ${won(fees)}원 차감</div></div>
+      <div class="val num">${won(yearNow)}원</div></div>
+    <div class="tx"><div class="ico">🎯</div><div class="mid"><div class="mch">최적화 조치를 따랐을 때</div>
+      <div class="meta">매달 권장 카드로 갈아탄다고 가정</div></div>
+      <div class="val num" style="color:var(--go)">${won(yearOpt)}원</div></div>
+    <div class="tx"><div class="ico">✨</div><div class="mid"><div class="mch">연간 추가 확보액</div>
+      <div class="meta">차액</div></div>
+      <div class="val num" style="color:var(--go)">+${won(yearOpt-yearNow)}원</div></div>
+  </div>
+  <p class="note">예측은 입력한 혜택 금액과 이번 주기 사용 패턴이 유지된다고 가정한 값입니다.</p>`;
+}
+
+/* ── 화면 전환 ───────────────────────────────────── */
+function go(v){
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('on'));
+  document.getElementById('v-'+v).classList.add('on');
+  document.querySelectorAll('.tabbar button').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
+  window.scrollTo({top:0});
+  render(v);
+}
+function render(v){
+  const which = v || (document.querySelector('.view.on')||{}).id?.replace('v-','') || 'home';
+  ({home:renderHome, cards:renderCards, sms:renderSms, opt:renderOpt, stats:renderStats}[which]||renderHome)();
+}
+function renderAll(){ save(); render(); }
+
+/* ── 시트 ────────────────────────────────────────── */
+function openSheet(html){ document.getElementById('sheetBody').innerHTML = html;
+  document.getElementById('sheet').classList.add('open'); }
+function closeSheet(){ document.getElementById('sheet').classList.remove('open'); }
+
+/* ── 설정 토글 ───────────────────────────────────── */
+function toggleSetting(k, el){
+  DB.settings[k] = !DB.settings[k];
+  el.classList.toggle('on', DB.settings[k]);
+  save();
+  if(k==='clipboard' && DB.settings[k]) toast('앱으로 돌아올 때 클립보드를 확인합니다');
+}
+
+/* ── 문자 수집 ───────────────────────────────────── */
+function ingest(text, silent){
+  const msgs = splitMessages(text);
+  let ok=0, fail=0, dup=0;
+  for(const msg of msgs){
+    DB.stats.total++;
+    const r = parseSMS(msg);
+    if(!r.ok){ DB.unrec.unshift({raw:msg, reason:r.reason, at:Date.now()}); fail++; continue; }
+    const t = r.txn;
+    if(DB.settings.dedupe && DB.txns.some(x=>x.issuer===t.issuer && x.amount===t.amount && x.date===t.date)){ dup++; continue; }
+    t.cardId = matchCard(t);
+    DB.txns.push(t);
+    DB.stats.ok++; ok++;
+  }
+  DB.unrec = DB.unrec.slice(0,30);
+  save(); render();
+  if(!silent) toast(`${ok}건 저장${fail?` · ${fail}건 미인식`:''}${dup?` · ${dup}건 중복`:''}`);
+  return {ok,fail,dup};
+}
+function ingestInput(){
+  const ta = document.getElementById('smsInput');
+  if(!ta.value.trim()){ toast('분석할 문자를 넣어주세요'); return; }
+  ingest(ta.value); ta.value='';
+}
+async function pasteFromClipboard(){
+  try{
+    const t = await navigator.clipboard.readText();
+    if(!t){ toast('클립보드가 비어 있습니다'); return; }
+    document.getElementById('smsInput').value = t;
+    toast('붙여넣었습니다. 내용을 확인하고 저장하세요');
+  }catch(e){ toast('브라우저가 클립보드 접근을 막았습니다. 직접 붙여넣어 주세요'); }
+}
+function dropUnrec(i){ DB.unrec.splice(i,1); renderAll(); }
+
+/* ── 미인식 문자 직접 입력 ───────────────────────── */
+function openManual(i){
+  const u = DB.unrec[i];
+  openSheet(`<h3>직접 입력</h3><p class="sh-sub">읽지 못한 항목만 채우면 됩니다.</p>
+  <label class="f"><span>카드</span><select class="i" id="mCard">
+    ${DB.cards.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')||'<option value="">카드를 먼저 등록하세요</option>'}
+  </select></label>
+  <div class="g2">
+    <label class="f"><span>금액(원)</span><input class="i num" id="mAmt" inputmode="numeric" placeholder="12000"></label>
+    <label class="f"><span>날짜</span><input class="i" id="mDate" type="date" value="${new Date().toISOString().slice(0,10)}"></label>
+  </div>
+  <label class="f"><span>가맹점</span><input class="i" id="mMch" placeholder="스타벅스 강남점"></label>
+  <label class="f"><span>업종</span><select class="i" id="mCat">${CAT_NAMES.map(c=>`<option>${c}</option>`).join('')}</select></label>
+  <button class="btn" onclick="saveManual(${i})">저장</button>`);
+  document.getElementById('mMch').addEventListener('input', e=>{
+    document.getElementById('mCat').value = classify(e.target.value);
+  });
+}
+function saveManual(i){
+  const cardId = document.getElementById('mCard').value;
+  const amt = parseInt((document.getElementById('mAmt').value||'').replace(/[^0-9-]/g,''),10);
+  if(!cardId || !amt){ toast('카드와 금액은 필수입니다'); return; }
+  const d = new Date(document.getElementById('mDate').value+'T12:00:00');
+  const c = DB.cards.find(x=>x.id===cardId);
+  const mch = document.getElementById('mMch').value || '가맹점 미상';
+  DB.txns.push({id:uid(), cardId, issuer:c.issuer, issuerName:c.name, last4:c.last4,
+    amount:amt, canceled:false, date:d.toISOString(), merchant:mch,
+    category:document.getElementById('mCat').value, installment:0, raw:DB.unrec[i].raw,
+    source:'manual', excludedManual:null});
+  DB.stats.ok++;
+  DB.unrec.splice(i,1);
+  closeSheet(); renderAll(); toast('저장했습니다');
+}
+
+/* ── 거래 편집 ───────────────────────────────────── */
+function openTx(id){
+  const t = DB.txns.find(x=>x.id===id); if(!t) return;
+  const c = DB.cards.find(x=>x.id===t.cardId);
+  openSheet(`<h3>${esc(t.merchant)}</h3>
+  <p class="sh-sub">${fmtDate(t.date)} · ${esc(t.issuerName)} · ${won(Math.abs(t.amount))}원${t.canceled?' (취소)':''}</p>
+  <label class="f"><span>카드 지정</span><select class="i" id="tCard">
+    <option value="">지정 안 함</option>
+    ${DB.cards.map(x=>`<option value="${x.id}" ${x.id===t.cardId?'selected':''}>${esc(x.name)}</option>`).join('')}
+  </select></label>
+  <label class="f"><span>업종</span><select class="i" id="tCat">
+    ${CAT_NAMES.map(x=>`<option ${x===t.category?'selected':''}>${x}</option>`).join('')}</select></label>
+  <label class="f"><span>실적 반영</span><select class="i" id="tEx">
+    <option value="auto" ${t.excludedManual===null||t.excludedManual===undefined?'selected':''}>업종 규칙에 맡기기 (현재 ${isExcluded(t,c)?'제외':'포함'})</option>
+    <option value="in" ${t.excludedManual===false?'selected':''}>실적에 포함</option>
+    <option value="out" ${t.excludedManual===true?'selected':''}>실적에서 제외</option>
+  </select></label>
+  <details style="margin:6px 0 14px"><summary style="font-size:12px;color:var(--mute);cursor:pointer">원본 문자 보기</summary>
+    <div class="num" style="font-size:11.5px;white-space:pre-wrap;color:var(--ink-2);margin-top:8px">${esc(t.raw||'—')}</div></details>
+  <button class="btn" onclick="saveTx('${t.id}')">저장</button>
+  <div class="btnrow"><button class="btn ghost" onclick="delTx('${t.id}')">이 거래 삭제</button></div>`);
+}
+function saveTx(id){
+  const t = DB.txns.find(x=>x.id===id); if(!t) return;
+  t.cardId = document.getElementById('tCard').value || null;
+  t.category = document.getElementById('tCat').value;
+  const ex = document.getElementById('tEx').value;
+  t.excludedManual = ex==='auto' ? null : (ex==='out');
+  closeSheet(); renderAll(); toast('반영했습니다');
+}
+function delTx(id){ DB.txns = DB.txns.filter(x=>x.id!==id); closeSheet(); renderAll(); toast('삭제했습니다'); }
+
+/* ── 카드 편집 ───────────────────────────────────── */
+function openCard(id){
+  const c = id ? DB.cards.find(x=>x.id===id) : null;
+  const tiers = c ? c.tiers : [{label:'30만',min:300000,benefit:10000},{label:'50만',min:500000,benefit:20000},{label:'100만',min:1000000,benefit:35000}];
+  const ex = c ? (c.excludes||DEFAULT_EXCLUDE) : DEFAULT_EXCLUDE;
+  const rates = c ? (c.rates||[]) : [];
+  openSheet(`<h3>${c?'카드 편집':'카드 추가'}</h3>
+  <p class="sh-sub">카드사 공지에 적힌 값을 그대로 옮겨 적으면 계산이 정확해집니다.</p>
+  <div class="g2">
+    <label class="f"><span>카드사</span><select class="i" id="cIss">
+      ${ISSUERS.filter(i=>i.key!=='etc').map(i=>`<option value="${i.key}" ${c&&c.issuer===i.key?'selected':''}>${i.name}</option>`).join('')}
+    </select></label>
+    <label class="f"><span>카드 뒷 4자리</span><input class="i num" id="cL4" maxlength="4" inputmode="numeric" value="${c?esc(c.last4||''):''}" placeholder="1234"></label>
+  </div>
+  <label class="f"><span>카드 이름</span><input class="i" id="cName" value="${c?esc(c.name):''}" placeholder="신한 딥드림"></label>
+  <label class="f"><span>연회비(원)</span><input class="i num" id="cFee" inputmode="numeric" value="${c?(c.annualFee||0):0}"></label>
+
+  <div class="sec" style="margin-top:14px">실적 구간</div>
+  <div id="tierRows">${tiers.map((t,i)=>tierRow(t,i)).join('')}</div>
+  <button class="btn ghost sm" onclick="addTier()">구간 추가</button>
+
+  <div class="sec">실적에서 빼는 업종</div>
+  <div class="chips" id="exChips">${CAT_NAMES.map(n=>
+    `<span class="chip ${ex.includes(n)?'on':''}" onclick="this.classList.toggle('on')">${n}</span>`).join('')}</div>
+
+  <div class="sec">업종별 적립률(%)</div>
+  <div class="g2" id="rateRows">${CAT_NAMES.filter(n=>n!=='기타').map(n=>{
+    const r = rates.find(x=>x.category===n);
+    return `<label class="f" style="margin-bottom:6px"><span>${n}</span>
+      <input class="i num" data-cat="${n}" inputmode="decimal" value="${r?r.rate:''}" placeholder="0"></label>`;
+  }).join('')}</div>
+
+  <button class="btn" onclick="saveCard('${c?c.id:''}')">저장</button>
+  ${c?`<div class="btnrow"><button class="btn ghost" onclick="delCard('${c.id}')">카드 삭제</button></div>`:''}`);
+}
+function tierRow(t,i){
+  return `<div class="g3" data-tier style="margin-bottom:7px">
+    <input class="i" data-k="label" value="${esc(t.label||'')}" placeholder="30만">
+    <input class="i num" data-k="min" inputmode="numeric" value="${t.min||''}" placeholder="300000">
+    <input class="i num" data-k="benefit" inputmode="numeric" value="${t.benefit||''}" placeholder="혜택 10000">
+  </div>`;
+}
+function addTier(){ document.getElementById('tierRows').insertAdjacentHTML('beforeend', tierRow({},0)); }
+function saveCard(id){
+  const tiers = [...document.querySelectorAll('[data-tier]')].map(r=>{
+    const g = k => r.querySelector(`[data-k="${k}"]`).value.replace(/,/g,'');
+    return {label:g('label')||man(+g('min')), min:parseInt(g('min')||0,10), benefit:parseInt(g('benefit')||0,10)};
+  }).filter(t=>t.min>0).sort((a,b)=>a.min-b.min);
+  const excludes = [...document.querySelectorAll('#exChips .chip.on')].map(e=>e.textContent);
+  const rates = [...document.querySelectorAll('#rateRows input')].map(i=>({category:i.dataset.cat, rate:parseFloat(i.value||0)}))
+    .filter(r=>r.rate>0);
+  const iss = document.getElementById('cIss').value;
+  const name = document.getElementById('cName').value.trim() || (ISSUERS.find(i=>i.key===iss)||{}).name;
+  const data = {issuer:iss, name, last4:document.getElementById('cL4').value.replace(/\D/g,''),
+    annualFee:parseInt((document.getElementById('cFee').value||'0').replace(/\D/g,''),10),
+    tiers, excludes, rates, active:true};
+  if(id){ Object.assign(DB.cards.find(c=>c.id===id), data); }
+  else { DB.cards.push({id:uid(), ...data}); }
+  DB.txns.filter(t=>!t.cardId).forEach(t=>{ t.cardId = matchCard(t); });
+  closeSheet(); renderAll(); toast('저장했습니다');
+}
+function delCard(id){
+  DB.cards = DB.cards.filter(c=>c.id!==id);
+  DB.txns.forEach(t=>{ if(t.cardId===id) t.cardId=null; });
+  closeSheet(); renderAll(); toast('카드를 삭제했습니다');
+}
+
+/* ── 템플릿 ──────────────────────────────────────── */
+const PRESETS = [
+  {name:'3구간형 (30/50/100만)', issuer:'shinhan', annualFee:15000,
+   tiers:[{label:'30만',min:300000,benefit:10000},{label:'50만',min:500000,benefit:20000},{label:'100만',min:1000000,benefit:40000}],
+   rates:[{category:'편의점',rate:5},{category:'카페',rate:5},{category:'교통',rate:3}]},
+  {name:'2구간형 (40/70만)', issuer:'kb', annualFee:12000,
+   tiers:[{label:'40만',min:400000,benefit:15000},{label:'70만',min:700000,benefit:30000}],
+   rates:[{category:'마트/식료품',rate:5},{category:'온라인쇼핑',rate:3}]},
+  {name:'단일 구간형 (30만)', issuer:'samsung', annualFee:10000,
+   tiers:[{label:'30만',min:300000,benefit:12000}],
+   rates:[{category:'온라인쇼핑',rate:5},{category:'문화/구독',rate:10}]},
+  {name:'고액 구간형 (50/100/200만)', issuer:'hyundai', annualFee:30000,
+   tiers:[{label:'50만',min:500000,benefit:15000},{label:'100만',min:1000000,benefit:40000},{label:'200만',min:2000000,benefit:90000}],
+   rates:[{category:'주유/충전',rate:5},{category:'백화점/아울렛',rate:3}]},
+  {name:'무실적형 (구간 없음)', issuer:'toss', annualFee:0, tiers:[],
+   rates:[{category:'편의점',rate:3},{category:'교통',rate:3}]}
+];
+function openPresets(){
+  openSheet(`<h3>템플릿에서 고르기</h3>
+  <p class="sh-sub">비슷한 형태를 고른 뒤, 카드사 공지의 실제 값으로 고쳐 쓰세요.</p>
+  ${PRESETS.map((p,i)=>`<div class="box" style="margin-bottom:9px" onclick="usePreset(${i})">
+    <b style="font-size:14px">${esc(p.name)}</b>
+    <div style="font-size:12px;color:var(--ink-2);margin-top:5px">
+      ${p.tiers.length? p.tiers.map(t=>`${t.label} → ${won(t.benefit)}원`).join(' / ') : '실적 조건 없음'}
+    </div></div>`).join('')}
+  <p class="note">여기 적힌 구간과 혜택 금액은 형태를 보여주기 위한 예시입니다. 실제 조건은 카드사 홈페이지·앱의 상품 안내를 확인해 입력해야 합니다.</p>`);
+}
+function usePreset(i){
+  const p = PRESETS[i];
+  DB.cards.push({id:uid(), issuer:p.issuer, name:p.name, last4:'', annualFee:p.annualFee,
+    tiers:p.tiers, excludes:DEFAULT_EXCLUDE, rates:p.rates, active:true});
+  closeSheet(); renderAll(); go('cards'); toast('추가했습니다. 카드 이름과 뒷자리를 채워주세요');
+}
+
+/* ── 샘플 데이터 ─────────────────────────────────── */
+function loadDemo(){
+  DB.cards = [
+    {id:'c1', issuer:'shinhan', name:'신한 생활카드', last4:'1234', annualFee:15000,
+     tiers:[{label:'30만',min:300000,benefit:10000},{label:'50만',min:500000,benefit:22000},{label:'100만',min:1000000,benefit:45000}],
+     excludes:DEFAULT_EXCLUDE, rates:[{category:'편의점',rate:5},{category:'카페',rate:5},{category:'교통',rate:3}], active:true},
+    {id:'c2', issuer:'kb', name:'KB 쇼핑카드', last4:'5678', annualFee:12000,
+     tiers:[{label:'40만',min:400000,benefit:15000},{label:'70만',min:700000,benefit:30000}],
+     excludes:DEFAULT_EXCLUDE, rates:[{category:'온라인쇼핑',rate:7},{category:'마트/식료품',rate:4}], active:true},
+    {id:'c3', issuer:'hyundai', name:'현대 주유카드', last4:'9012', annualFee:20000,
+     tiers:[{label:'50만',min:500000,benefit:18000},{label:'100만',min:1000000,benefit:42000}],
+     excludes:DEFAULT_EXCLUDE, rates:[{category:'주유/충전',rate:6},{category:'백화점/아울렛',rate:3}], active:true}
+  ];
+  const seed = [
+    ['c1','스타벅스 강남점',6800,'카페',1],['c1','GS25 역삼점',4300,'편의점',1],
+    ['c1','카카오T 택시',12400,'교통',2],['c1','배달의민족',27000,'음식점',2],
+    ['c1','이마트 성수점',86400,'마트/식료품',3],['c1','스타벅스 삼성점',11200,'카페',4],
+    ['c1','CU 논현점',3900,'편의점',5],['c1','한국전력 전기요금',68000,'공과금/세금',5],
+    ['c1','SRT 승차권',52400,'교통',6],['c1','올리브영',34500,'생활/뷰티',7],
+    ['c1','배달의민족',31200,'음식점',8],['c1','메가커피',2500,'카페',9],
+    ['c1','쿠팡',158000,'온라인쇼핑',10],['c1','이마트 성수점',124000,'마트/식료품',11],
+    ['c1','GS25 역삼점',7800,'편의점',12],['c1','CGV 강남',28000,'문화/구독',13],
+    ['c1','넷플릭스',17000,'문화/구독',14],['c1','병원 진료비',48000,'의료/약국',15],
+    ['c1','배달의민족',24600,'음식점',16],['c1','스타벅스 강남점',9400,'카페',17],
+    ['c1','신세계백화점 가전',389000,'백화점/아울렛',18],
+    ['c2','쿠팡',64300,'온라인쇼핑',2],['c2','11번가',128000,'온라인쇼핑',5],
+    ['c2','홈플러스',73200,'마트/식료품',8],['c2','무신사',96000,'온라인쇼핑',12],
+    ['c2','G마켓',41800,'온라인쇼핑',15],
+    ['c3','GS칼텍스 주유',82000,'주유/충전',3],['c3','SK에너지 주유',75000,'주유/충전',11],
+    ['c3','신세계백화점',210000,'백화점/아울렛',14],['c3','현대오일뱅크',68000,'주유/충전',18]
+  ];
+  const {start} = cycleRange();
+  DB.txns = seed.map(([cardId,mch,amt,cat,day])=>{
+    const d = new Date(start); d.setDate(d.getDate()+day-1); d.setHours(9+(day%10),(day*7)%60);
+    const c = DB.cards.find(x=>x.id===cardId);
+    return {id:uid(), cardId, issuer:c.issuer, issuerName:c.name, last4:c.last4, amount:amt,
+      canceled:false, date:d.toISOString(), merchant:mch, category:cat, installment:0,
+      raw:`[Web발신]\n${c.name}(${c.last4})승인\n${won(amt)}원 일시불\n${d.getMonth()+1}/${d.getDate()} ${mch}`,
+      source:'sms', excludedManual:null};
+  });
+  DB.stats = {total: DB.txns.length + 2, ok: DB.txns.length};
+  DB.unrec = [{raw:'[Web발신]\n고객님 이번 달 청구금액 안내\n총 1,284,000원\n자세한 내용은 앱에서 확인하세요', reason:'결제 문자로 보이지 않습니다', at:Date.now()}];
+  renderAll(); toast('샘플 데이터를 넣었습니다');
+}
+
+/* ── 공유 시트 / 클립보드 진입 ───────────────────── */
+function handleShareTarget(){
+  const q = new URLSearchParams(location.search);
+  const text = q.get('text') || q.get('title');
+  if(text && DB.settings.share){
+    const r = ingest(text, true);
+    go('sms');
+    toast(r.ok ? `공유받은 문자 ${r.ok}건을 저장했습니다` : '공유받은 문자를 인식하지 못했습니다');
+    history.replaceState(null,'',location.pathname);
+  }
+}
+document.addEventListener('visibilitychange', async ()=>{
+  if(document.visibilityState!=='visible' || !DB.settings.clipboard) return;
+  try{
+    const t = await navigator.clipboard.readText();
+    if(!t || t===window.__lastClip) return;
+    window.__lastClip = t;
+    if(parseSMS(t).ok){
+      if(confirm('클립보드에서 결제 문자를 찾았습니다. 저장할까요?')) ingest(t);
+    }
+  }catch(e){}
+});
+
+/* ── 시작 ────────────────────────────────────────── */
+load();
+handleShareTarget();
+renderHome();
+if(!DB.cards.length) go('home');
+
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
