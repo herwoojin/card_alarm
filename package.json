@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui"
+    "e2e:ui": "playwright test --ui",
+    "verify:privacy": "node scripts/verify-static-privacy.mjs"
   },
   "dependencies": {
     "dexie": "^4.0.11",
