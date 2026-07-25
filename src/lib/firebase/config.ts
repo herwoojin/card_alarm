@@ -15,6 +15,8 @@ export interface FirebaseConfig {
   storageBucket: string;
   messagingSenderId: string;
   appId: string;
+  /** Realtime Database URL. 문자 자동 수신함(무료)용. 없으면 수신함 기능 비활성 */
+  databaseURL?: string;
 }
 
 const DEFAULTS: FirebaseConfig = {
@@ -34,10 +36,17 @@ export function readFirebaseConfig(): FirebaseConfig | null {
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || DEFAULTS.storageBucket,
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || DEFAULTS.messagingSenderId,
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || DEFAULTS.appId,
+    // RTDB URL은 콘솔에서 Realtime Database를 만든 뒤에 채운다(env). 없으면 수신함만 비활성.
+    databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || undefined,
   };
   // 필수 필드가 하나라도 비면 미설정으로 간주한다(= 로컬 전용 모드).
   if (!cfg.apiKey || !cfg.authDomain || !cfg.projectId || !cfg.storageBucket || !cfg.appId) return null;
   return cfg;
+}
+
+/** 문자 자동 수신함(RTDB) 사용 가능 여부 = databaseURL 이 설정되어 있는가. */
+export function isInboxConfigured(): boolean {
+  return !!readFirebaseConfig()?.databaseURL;
 }
 
 /** Firebase 설정이 존재하는가(클라우드 기능 노출 여부). */

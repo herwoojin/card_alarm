@@ -74,6 +74,14 @@
       ]
     },
     {
+      "name": "문자 자동 수신 (선택·무료)",
+      "items": [
+        { "name": "Netlify Function (webhook)", "version": "firebase-admin ^13", "purpose": "폰 자동화/Make/Zapier/n8n → 웹훅 → 서비스 계정으로 RTDB 수신함에 적재(무료 티어)", "config": "netlify/functions/ingest.mjs, netlify.toml" },
+        { "name": "Firebase Realtime Database", "purpose": "수신함(inbox/{uid}). 앱이 로그인 상태로 구독해 자동 저장·삭제. Spark 무료", "config": "src/lib/firebase/inbox.ts, database.rules.json" },
+        { "name": "온디바이스 URL(?text=)", "purpose": "서버 없이 앱을 열어 자동 저장(방법 A). 공유 타깃과 동일 경로", "config": "src/app/page.tsx" }
+      ]
+    },
+    {
       "name": "CORS / 네트워크 / CSP",
       "items": [
         { "name": "connect-src 'self' + Firebase", "purpose": "기본 로컬은 외부 0건. 클라우드용으로 *.googleapis.com/*.firebaseio.com, frame-src firebaseapp/accounts.google만 허용(로그인 안 하면 미접속)", "config": "public/_headers" },

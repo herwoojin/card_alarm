@@ -23,6 +23,17 @@ export function CloudSection() {
   const [pass, setPass] = useState('');
   const [encrypt, setEncrypt] = useState(false);
 
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const webhookUrl = cloud.inboxToken ? `${origin}/.netlify/functions/ingest?token=${cloud.inboxToken}&text=` : '';
+  const copyWebhook = async () => {
+    try {
+      await navigator.clipboard.writeText(webhookUrl);
+      ui.toast('웹훅 주소를 복사했습니다');
+    } catch {
+      ui.toast('복사 실패 — 주소를 길게 눌러 복사하세요');
+    }
+  };
+
   useEffect(() => {
     void cloud.init();
   }, [cloud]);
@@ -120,6 +131,27 @@ export function CloudSection() {
             <div><div className="t">자동 백업</div><div className="d">데이터가 바뀌면 잠시 뒤 자동으로 클라우드에 올립니다. (비밀번호를 입력해 두면 암호화해서 올립니다)</div></div>
             <Toggle checked={autoBackup} onChange={(v) => void setSetting('cloudAutoBackup', v)} label="자동 백업" />
           </div>
+
+          <div className="sec">문자 자동 수신 (웹훅 · 무료)</div>
+          {cloud.inboxAvailable && webhookUrl ? (
+            <>
+              <p className="note" style={{ marginTop: 0 }}>
+                폰 자동화(단축어/MacroDroid)나 Make·Zapier·n8n가 문자 도착 시 아래 주소를 열게 하세요. 앱이 닫혀 있어도 다음에 열 때 자동으로 저장됩니다. <b>[문자내용]</b> 자리에 받은 문자를 넣습니다.
+              </p>
+              <div className="num" style={{ background: 'var(--paper-2)', border: '1px solid var(--line)', borderRadius: 10, padding: '10px 12px', fontSize: 11.5, wordBreak: 'break-all', color: 'var(--ink-2)' }}>
+                {webhookUrl}[문자내용]
+              </div>
+              <div className="btnrow">
+                <button className="btn ghost sm" onClick={copyWebhook}>웹훅 주소 복사</button>
+                <a className="btn ghost sm" href="/guide#auto" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>설정 방법</a>
+              </div>
+              <p className="note">이 주소에는 개인 토큰이 들어 있습니다. 남에게 공유하지 마세요(내 계정 수신함에만 저장됩니다).</p>
+            </>
+          ) : (
+            <p className="note" style={{ marginTop: 0 }}>
+              실시간 클라우드 수신함(앱이 닫혀 있어도 받기)을 쓰려면 Realtime Database 설정이 필요합니다. `FIREBASE_SETUP.md`의 “문자 자동 수신함” 단계를 참고하세요. 그 전에도 설정의 “문자 자동 수집(앱 열기)”은 바로 됩니다.
+            </p>
+          )}
         </>
       )}
     </>

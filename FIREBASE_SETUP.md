@@ -79,6 +79,45 @@ gsutil cors set cors.json gs://card-alarm-service.firebasestorage.app
 
 ---
 
+## 5) (선택) 문자 자동 수신함 — 앱이 닫혀 있어도 자동 저장 (전부 무료)
+
+문자가 오면 폰 자동화(또는 Make/Zapier/n8n)가 **무료 웹훅**을 호출 → **Realtime Database(무료)** 수신함에 쌓이고 → 앱이 로그인 상태에서 자동으로 저장·비웁니다. Cloud Functions(유료) 없이 **Netlify Function(무료)** 로 처리합니다.
+
+**5-1. Realtime Database 만들기**
+Firebase 콘솔 → **Build → Realtime Database** → **데이터베이스 만들기** → 위치 선택 → **잠금 모드**로 시작.
+- 만들면 상단에 URL이 보입니다(예: `https://card-alarm-service-default-rtdb.firebasedatabase.app`). 이 값을 아래에서 씁니다.
+
+**5-2. RTDB 보안 규칙** — **Realtime Database → 규칙** 탭에 저장소의 `database.rules.json` 내용을 붙여넣고 게시:
+
+```json
+{
+  "rules": {
+    "users":       { "$uid":   { ".read": "auth != null && auth.uid === $uid", ".write": "auth != null && auth.uid === $uid" } },
+    "tokenOwners": { "$token": { ".read": false, ".write": "auth != null && newData.val() === auth.uid && (!data.exists() || data.val() === auth.uid)" } },
+    "inbox":       { "$uid":   { ".read": "auth != null && auth.uid === $uid", ".write": "auth != null && auth.uid === $uid",
+        "$item": { ".validate": "newData.hasChildren(['text']) && newData.child('text').isString() && newData.child('text').val().length <= 4000" } } }
+  }
+}
+```
+(웹훅 함수는 서비스 계정으로 쓰기 때문에 규칙을 우회합니다. 규칙은 브라우저 클라이언트가 **자기 수신함만** 읽고 지우도록 강제합니다.)
+
+**5-3. 서비스 계정 키 만들기**
+Firebase 콘솔 → **프로젝트 설정 → 서비스 계정 → 새 비공개 키 생성** → JSON 다운로드. (이건 **진짜 시크릿**입니다. 커밋 금지)
+
+**5-4. Netlify 환경변수 3개 등록** (Site settings → Environment variables)
+
+| Key | Value | 비고 |
+|---|---|---|
+| `NEXT_PUBLIC_FIREBASE_DATABASE_URL` | 5-1의 RTDB URL | 클라이언트가 수신함 구독 |
+| `FIREBASE_DB_URL` | 위와 동일 | 웹훅 함수용 |
+| `FIREBASE_SERVICE_ACCOUNT` | 5-3의 JSON 전체(한 줄) | 웹훅 함수용 시크릿 |
+
+등록 후 **재배포**하면, 로그인 시 설정 화면에 **웹훅 주소**가 표시됩니다(개인 토큰 포함). 그 주소를 폰 자동화/Make/Zapier/n8n에 넣으면 끝입니다. 자세한 자동화 레시피는 `AUTOMATION_SETUP.md` 참고.
+
+> 규칙을 CLI로 배포하려면: `firebase deploy --only database` (설정 파일 `firebase.json` 포함)
+
+---
+
 ## 동작 방식 요약
 
 - **로그인**: 첫 화면 또는 설정 시트에서 "Google로 계속하기". 세션은 브라우저에 유지됩니다.

@@ -1,0 +1,25 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "tokenOwners": {
+      "$token": {
+        ".read": false,
+        ".write": "auth != null && newData.val() === auth.uid && (!data.exists() || data.val() === auth.uid)"
+      }
+    },
+    "inbox": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "$item": {
+          ".validate": "newData.hasChildren(['text']) && newData.child('text').isString() && newData.child('text').val().length <= 4000"
+        }
+      }
+    }
+  }
+}

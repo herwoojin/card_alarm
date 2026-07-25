@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { isFirebaseConfigured } from '@/lib/firebase/config';
+import { isFirebaseConfigured, isInboxConfigured } from '@/lib/firebase/config';
+import { ensureInboxToken, subscribeInbox } from '@/lib/firebase/inbox';
 import type { AuthUser } from '@/lib/firebase/auth';
 import { buildBackup } from '@/lib/db/backup';
 import { encryptString, decryptString, isEncrypted } from '@/lib/crypto';
@@ -31,6 +32,10 @@ interface CloudState {
   user: AuthUser | null;
   busy: boolean;
   lastCloudBackupAt: number | null;
+  /** 문자 자동 수신함 사용 가능 여부(RTDB 설정됨) */
+  inboxAvailable: boolean;
+  /** 이 사용자의 수신 토큰(자동화 웹훅 URL에 들어감) */
+  inboxToken: string | null;
   /** 이번 세션에서 입력한 비밀번호(메모리 전용, 저장하지 않음) */
   sessionPassphrase: string | null;
 
@@ -43,6 +48,40 @@ interface CloudState {
 }
 
 let unsub: (() => void) | null = null;
+let inboxUnsub: (() => void) | null = null;
+
+/** 로그인된 사용자의 수신함을 구독해 들어오는 문자를 자동 저장한다. */
+async function setupInbox(userUid: string): Promise<void> {
+  if (!isInboxConfigured()) return;
+  try {
+    const token = await ensureInboxToken(userUid);
+    useCloudStore.setState({ inboxToken: token });
+    if (inboxUnsub) {
+      inboxUnsub();
+      inboxUnsub = null;
+    }
+    inboxUnsub = await subscribeInbox(userUid, async (text) => {
+      await useAppStore.getState().ingest(text);
+    });
+  } catch {
+    /* RTDB 미설정/권한 등 — 수신함 없이 계속 동작 */
+  }
+}
+
+function teardownInbox(): void {
+  if (inboxUnsub) {
+    inboxUnsub();
+    inboxUnsub = null;
+  }
+  useCloudStore.setState({ inboxToken: null });
+}
+
+/** 인증 상태 변화 공통 처리: 상태 반영 + 수신함 연결/해제 */
+function onAuthUser(user: AuthUser | null): void {
+  useCloudStore.setState({ user });
+  if (user) void setupInbox(user.uid);
+  else teardownInbox();
+}
 
 export const useCloudStore = create<CloudState>((set, get) => ({
   available: isFirebaseConfigured(),
@@ -50,6 +89,8 @@ export const useCloudStore = create<CloudState>((set, get) => ({
   user: null,
   busy: false,
   lastCloudBackupAt: null,
+  inboxAvailable: isInboxConfigured(),
+  inboxToken: null,
   sessionPassphrase: null,
 
   async init() {
@@ -62,7 +103,7 @@ export const useCloudStore = create<CloudState>((set, get) => ({
     // 이전에 클라우드를 켠 사용자만 자동으로 세션을 복원한다(그 외엔 외부 요청 0건 유지).
     if (cloudEnabledFlag() && !unsub) {
       const { subscribeAuth } = await import('@/lib/firebase/auth');
-      unsub = await subscribeAuth((user) => set({ user }));
+      unsub = await subscribeAuth(onAuthUser);
     }
     set({ ready: true });
   },
@@ -74,8 +115,8 @@ export const useCloudStore = create<CloudState>((set, get) => ({
       const { signInWithGoogle, subscribeAuth } = await import('@/lib/firebase/auth');
       const user = await signInWithGoogle();
       setCloudEnabledFlag(true);
-      if (!unsub) unsub = await subscribeAuth((u) => set({ user: u }));
-      set({ user });
+      if (!unsub) unsub = await subscribeAuth(onAuthUser);
+      onAuthUser(user);
     } finally {
       set({ busy: false });
     }
@@ -91,6 +132,7 @@ export const useCloudStore = create<CloudState>((set, get) => ({
         unsub();
         unsub = null;
       }
+      teardownInbox();
       set({ user: null, sessionPassphrase: null });
     } finally {
       set({ busy: false });
