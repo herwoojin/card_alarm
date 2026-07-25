@@ -1,5 +1,15 @@
 import { test, expect } from '@playwright/test';
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('siljeokon.entered', '1');
+    } catch {
+      /* ignore */
+    }
+  });
+});
+
 /**
  * 시나리오 3 — 최적화.
  * 카드 두 장을 템플릿으로 등록하고, 한 장을 최고 구간 위로 밀어 넣으면

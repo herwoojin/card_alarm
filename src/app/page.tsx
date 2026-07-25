@@ -2,11 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppStore } from '@/store/useAppStore';
+import { useCloudStore } from '@/store/useCloudStore';
 import { useRange, useDaysLeft } from '@/store/derived';
 import { parseSMS } from '@/lib/parser';
 import { readSharedText, clearShareQuery } from '@/lib/share/shareTarget';
 import { readClipboardOnce } from '@/lib/share/clipboard';
 import { UIContext, type SheetState, type TabKey, type UIApi } from '@/components/ui/ui-context';
+import { LoginLanding } from '@/components/LoginLanding';
+import { AuroraBorealisShader } from '@/components/ui/aurora-borealis-shader';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { CardsScreen } from '@/components/cards/CardsScreen';
 import { SmsScreen } from '@/components/sms/SmsScreen';
@@ -42,9 +45,11 @@ export default function Home() {
   const init = useAppStore((s) => s.init);
   const ingest = useAppStore((s) => s.ingest);
   const settingsClipboard = useAppStore((s) => s.settings.clipboard);
-  const settingsShare = useAppStore((s) => s.settings.share);
+  const cloudInit = useCloudStore((s) => s.init);
+  const cloudUser = useCloudStore((s) => s.user);
 
   const [mounted, setMounted] = useState(false);
+  const [entered, setEntered] = useState(false);
   const [tab, setTab] = useState<TabKey>('home');
   const [sheet, setSheet] = useState<SheetState | null>(null);
   const [toastMsg, setToastMsg] = useState('');
@@ -69,17 +74,27 @@ export default function Home() {
     closeSheet: () => setSheet(null),
   };
 
-  // 부팅: 정리 작업 + 데이터 로드 → SW 등록 → 공유 진입 처리
+  // 부팅: 데이터 로드 + 클라우드 세션 복원 + 진입 여부 + 공유 처리
   useEffect(() => {
+    let enteredFlag = false;
+    try {
+      enteredFlag = localStorage.getItem('siljeokon.entered') === '1';
+    } catch {
+      /* ignore */
+    }
+    setEntered(enteredFlag);
     setMounted(true);
+
     let cancelled = false;
     (async () => {
       await init();
+      await cloudInit();
       if (cancelled) return;
 
-      // 공유 시트 진입: ?text= 를 읽어 저장하고 쿼리를 즉시 제거
       const shared = readSharedText();
       if (shared && useAppStore.getState().settings.share) {
+        // 공유로 들어오면 로그인 화면을 건너뛰고 바로 처리
+        setEntered(true);
         const r = await ingest(shared);
         go('sms');
         toast(r.ok ? `공유받은 문자 ${r.ok}건을 저장했습니다` : '공유받은 문자를 인식하지 못했습니다');
@@ -96,7 +111,7 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 클립보드 자동 감지: 설정이 켜져 있고 탭이 다시 보일 때만
+  // 클립보드 자동 감지
   useEffect(() => {
     if (!settingsClipboard) return;
     const onVisible = async () => {
@@ -112,8 +127,37 @@ export default function Home() {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [settingsClipboard, ingest, toast]);
 
+  // 클라우드 자동 백업 — 로그인 + 설정 ON일 때 데이터 변경을 디바운스해 업로드
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const unsub = useAppStore.subscribe((state, prev) => {
+      if (state.transactions === prev.transactions && state.cards === prev.cards) return;
+      if (!state.settings.cloudAutoBackup) return;
+      if (!useCloudStore.getState().user) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        useCloudStore.getState().backupNow().catch(() => {});
+      }, 4000);
+    });
+    return () => {
+      if (timer) clearTimeout(timer);
+      unsub();
+    };
+  }, []);
+
+  if (mounted && !entered && !cloudUser) {
+    return (
+      <UIContext.Provider value={api}>
+        <LoginLanding onEnter={() => setEntered(true)} />
+      </UIContext.Provider>
+    );
+  }
+
   return (
     <UIContext.Provider value={api}>
+      {mounted ? <AuroraBorealisShader opacity={1} /> : null}
+      <div className="app-scrim" aria-hidden="true" />
+
       <header className="topbar">
         <div className="wrap">
           <div className="brand">

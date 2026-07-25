@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS: Settings = {
   cycleStart: 1,
   reachableFactor: 0.8,
   rawRetentionMonths: 12,
+  cloudAutoBackup: false,
 };
 
 export const DEFAULT_STATS: ParseStats = {

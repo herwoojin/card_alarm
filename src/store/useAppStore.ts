@@ -97,6 +97,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     cycleStart: 1,
     reachableFactor: 0.8,
     rawRetentionMonths: 12,
+    cloudAutoBackup: false,
   },
 
   async init() {

@@ -18,9 +18,11 @@
   "dependencies": {
     "dexie": "^4.0.11",
     "dexie-react-hooks": "^1.1.7",
+    "firebase": "^12.16.0",
     "next": "14.2.32",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "three": "^0.185.1",
     "zustand": "^4.5.7"
   },
   "devDependencies": {
@@ -30,6 +32,7 @@
     "@types/node": "^20.19.9",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
+    "@types/three": "^0.185.1",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^8.57.1",

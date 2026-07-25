@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { pretendard } from './fonts';
+import { pretendard, paperlogy } from './fonts';
 import './globals.css';
 
 // 정적 셸. 결제 데이터가 IndexedDB에만 있으므로 서버에서 렌더할 데이터가 없다.
@@ -31,7 +31,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={pretendard.variable}>
+    <html lang="ko" className={`${paperlogy.variable} ${pretendard.variable}`}>
       <body>{children}</body>
     </html>
   );

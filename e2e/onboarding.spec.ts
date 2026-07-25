@@ -1,5 +1,16 @@
 import { test, expect } from '@playwright/test';
 
+// 로그인 랜딩을 건너뛰고 바로 앱으로 진입
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('siljeokon.entered', '1');
+    } catch {
+      /* ignore */
+    }
+  });
+});
+
 /**
  * 시나리오 1 — 온보딩(템플릿 기반).
  * 카드 0장 상태에서 템플릿으로 첫 카드를 등록하고, 사용법 안내가 노출된다.

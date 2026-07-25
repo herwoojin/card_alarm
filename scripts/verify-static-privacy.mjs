@@ -85,6 +85,12 @@ const main = async () => {
     document.addEventListener('securitypolicyviolation', (e) => {
       window.__csp.push(e.violatedDirective + ' → ' + e.blockedURI);
     });
+    // 로그인 랜딩을 건너뛰고 앱으로 진입(클라우드 미로그인 → 외부요청 0건 유지 확인)
+    try {
+      localStorage.setItem('siljeokon.entered', '1');
+    } catch (e) {
+      /* ignore */
+    }
   });
 
   page.on('request', (r) => {

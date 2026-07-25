@@ -1,0 +1,18 @@
+[
+  {
+    "origin": [
+      "https://25f.netlify.app",
+      "http://localhost:3000",
+      "http://localhost:3210"
+    ],
+    "method": ["GET", "PUT", "POST", "HEAD"],
+    "responseHeader": [
+      "Content-Type",
+      "Authorization",
+      "Content-Length",
+      "User-Agent",
+      "x-goog-resumable"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

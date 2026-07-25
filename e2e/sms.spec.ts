@@ -1,5 +1,15 @@
 import { test, expect } from '@playwright/test';
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('siljeokon.entered', '1');
+    } catch {
+      /* ignore */
+    }
+  });
+});
+
 /**
  * 시나리오 2 — 문자입력.
  * 여러 건을 빈 줄로 구분해 일괄 붙여넣고 저장하면 거래로 파싱되어 목록에 남는다.

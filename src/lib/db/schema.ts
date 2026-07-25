@@ -165,6 +165,14 @@ export async function setLastBackupAt(at: number): Promise<void> {
   await setMeta('lastBackupAt', at);
 }
 
+export async function getLastCloudBackupAt(): Promise<number | null> {
+  return getMeta<number>('lastCloudBackupAt');
+}
+
+export async function setLastCloudBackupAt(at: number): Promise<void> {
+  await setMeta('lastCloudBackupAt', at);
+}
+
 /* ── 시작 시 정리 작업 (규칙 6·7) ──────────────────── */
 
 /**

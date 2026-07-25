@@ -23,7 +23,7 @@
   --warn-soft: #FFE6E0;
   --blue: #2F5BEA;
   --r: 14px;
-  --sans: var(--font-pretendard), "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --sans: var(--font-paperlogy), var(--font-pretendard), "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", SFMono-Regular, "Roboto Mono", "DejaVu Sans Mono", monospace;
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
@@ -198,6 +198,8 @@ textarea.i { min-height: 112px; resize: vertical; font-family: var(--mono); font
 .empty p { font-size: 13.5px; margin: 0 0 14px; line-height: 1.6; }
 .note { font-size: 11.5px; color: var(--mute); line-height: 1.55; margin-top: 10px; }
 .banner { background: var(--hl-soft); border: 1px solid var(--hl); border-radius: var(--r); padding: 12px 14px; font-size: 12.5px; color: var(--ink); margin-top: 16px; }
+/* 오로라 배경 위 가독성 유지용 라이트 스크림 (콘텐츠 뒤, 오로라 앞) */
+.app-scrim { position: fixed; inset: 0; z-index: -9; background: rgba(233, 236, 241, 0.85); pointer-events: none; }
 .hidden { display: none !important; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 6px; }

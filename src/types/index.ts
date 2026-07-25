@@ -169,6 +169,8 @@ export interface Settings {
   reachableFactor: number;
   /** 원문 보관 기간(개월) */
   rawRetentionMonths: number;
+  /** 클라우드 자동 백업(로그인 상태에서 변경 시 자동 업로드). 기본 꺼짐 */
+  cloudAutoBackup: boolean;
 }
 
 /** 파싱 통계 (meta.stats). 정확도 = ok / total × 100. (ERD 2.4) */

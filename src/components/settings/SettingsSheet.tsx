@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { exportAll, readBackupFile } from '@/lib/db/backup';
 import { useAppStore } from '@/store/useAppStore';
 import { useUI } from '@/components/ui/ui-context';
+import { CloudSection } from './CloudSection';
 
 export function SettingsSheet() {
   const importBackup = useAppStore((s) => s.importBackup);
@@ -57,13 +58,15 @@ export function SettingsSheet() {
   return (
     <>
       <h3>설정 · 백업</h3>
-      <p className="sh-sub">서버에 아무것도 저장되지 않으므로 백업은 직접 하셔야 합니다.</p>
+      <p className="sh-sub">기본은 이 기기에만 저장됩니다. 클라우드 백업은 선택입니다.</p>
 
       <a className="btn ghost" href="/guide" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', marginBottom: 4 }}>
         📖 아주 쉽게 보는 사용법
       </a>
 
-      <div className="sec" style={{ marginTop: 8 }}>백업</div>
+      <CloudSection />
+
+      <div className="sec">기기 백업 (파일)</div>
       <button className="btn" onClick={onExport}>백업 내보내기 (JSON)</button>
       <div className="btnrow">
         <button className="btn ghost" onClick={onPickFile}>백업 가져오기</button>

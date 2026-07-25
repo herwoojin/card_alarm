@@ -33,7 +33,11 @@
 | React | 18.3 | UI 렌더링 | `src/app`, `src/components` | |
 | TypeScript | 5.9 strict | 금액 계산 타입 안정성 | `tsconfig.json` | `tsc --noEmit` 통과 |
 | Tailwind CSS | 3.4 | 디자인 토큰 매핑 | `tailwind.config.ts` | preflight 끔 |
-| Pretendard | 1.3.9 | 가변 폰트 self-host | `src/app/fonts.ts` | next/font/local, CDN 0건 |
+| Paperlogy | fonts-archive | 앱 기본 폰트 self-host | `src/app/fonts.ts` | 400/600/700/800 |
+| Pretendard | 1.3.9 | 폰트 폴백 self-host | `src/app/fonts.ts` | 미커버 글리프용 |
+| three.js | ^0.x | aurora 배경(앱), plasma(로그인) | `src/components/ui/*shader*.tsx` | 동적 import·reduced-motion |
+| Firebase (선택) | ^12 | 구글 로그인 + Storage 백업 | `src/lib/firebase/`, `storage.rules` | 옵트인·동적 import |
+| WebCrypto | 내장 | 백업 비밀번호 암호화(AES-GCM) | `src/lib/crypto.ts` | 서버는 평문 못 봄 |
 | Dexie | 4.x | IndexedDB 저장 계층 | `src/lib/db/schema.ts` | 복합 인덱스 `[cardId+date]` |
 | Zustand | 4.5 | 인메모리 앱 상태 | `src/store/useAppStore.ts` | DB 미러 |
 | SMS 파서 | — | 규칙 기반 파싱(라이브러리 없음) | `src/lib/parser/` | 카드사 13·업종 15 사전 |
