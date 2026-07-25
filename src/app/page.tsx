@@ -9,7 +9,7 @@ import { readSharedText, clearShareQuery } from '@/lib/share/shareTarget';
 import { readClipboardOnce } from '@/lib/share/clipboard';
 import { UIContext, type SheetState, type TabKey, type UIApi } from '@/components/ui/ui-context';
 import { LoginLanding } from '@/components/LoginLanding';
-import { AuroraBorealisShader } from '@/components/ui/aurora-borealis-shader';
+import { AppBackground } from '@/components/AppBackground';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { CardsScreen } from '@/components/cards/CardsScreen';
 import { SmsScreen } from '@/components/sms/SmsScreen';
@@ -155,8 +155,7 @@ export default function Home() {
 
   return (
     <UIContext.Provider value={api}>
-      {mounted ? <AuroraBorealisShader opacity={1} /> : null}
-      <div className="app-scrim" aria-hidden="true" />
+      {mounted ? <AppBackground /> : null}
 
       <header className="topbar">
         <div className="wrap">

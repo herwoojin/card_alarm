@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AppBackground } from '@/components/AppBackground';
 
 export const metadata: Metadata = {
   title: '아주 쉽게 보는 사용법 · 실적ON',
@@ -37,6 +38,7 @@ function Dot({ color }: { color: string }) {
 export default function GuidePage() {
   return (
     <main className="wrap" style={{ paddingTop: 18, paddingBottom: 40 }}>
+      <AppBackground />
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
         <span className="dot" aria-hidden="true" style={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--hl)', boxShadow: '0 0 0 3px rgba(242,225,75,.28)' }} />
         <b style={{ fontWeight: 800, fontSize: 15, letterSpacing: '-.04em' }}>실적ON</b>
