@@ -52,6 +52,7 @@ export default function Home() {
   const [entered, setEntered] = useState(false);
   const [tab, setTab] = useState<TabKey>('home');
   const [sheet, setSheet] = useState<SheetState | null>(null);
+  const [autoResult, setAutoResult] = useState<{ ok: number; fail: number; dup: number } | null>(null);
   const [toastMsg, setToastMsg] = useState('');
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -93,12 +94,16 @@ export default function Home() {
 
       const shared = readSharedText();
       if (shared && useAppStore.getState().settings.share) {
-        // 공유로 들어오면 로그인 화면을 건너뛰고 바로 처리
+        // 공유 시트/자동화(?text=)로 들어오면 로그인 화면을 건너뛰고 바로 처리
         setEntered(true);
+        const wantClose = new URLSearchParams(window.location.search).get('close') === '1';
         const r = await ingest(shared);
-        go('sms');
-        toast(r.ok ? `공유받은 문자 ${r.ok}건을 저장했습니다` : '공유받은 문자를 인식하지 못했습니다');
         clearShareQuery();
+        go('sms');
+        setAutoResult(r);
+        window.setTimeout(() => setAutoResult(null), 2800);
+        // 자동화가 &close=1 로 열었고 스크립트로 열린 탭이면 자동으로 닫는다
+        if (wantClose) window.setTimeout(() => { try { window.close(); } catch { /* ignore */ } }, 1500);
       }
     })();
 
@@ -227,6 +232,27 @@ export default function Home() {
       <div className={`toast${toastMsg ? ' on' : ''}`} role="status" aria-live="polite">
         {toastMsg}
       </div>
+
+      {autoResult ? (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(16,27,45,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+        >
+          <div style={{ background: 'var(--surface)', borderRadius: 18, padding: '26px 22px', width: '100%', maxWidth: 320, textAlign: 'center' }}>
+            <div style={{ fontSize: 40, lineHeight: 1 }} aria-hidden="true">{autoResult.ok ? '✅' : '📩'}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, marginTop: 12, letterSpacing: '-.03em' }}>
+              {autoResult.ok ? `${autoResult.ok}건 저장했습니다` : '문자를 인식하지 못했습니다'}
+            </div>
+            <div style={{ fontSize: 12.5, color: 'var(--mute)', marginTop: 6 }}>
+              {autoResult.fail ? `미인식 ${autoResult.fail}건 · ` : ''}
+              {autoResult.dup ? `중복 ${autoResult.dup}건 · ` : ''}
+              문자가 오면 자동으로 이 화면이 처리합니다.
+            </div>
+            <button className="btn" style={{ marginTop: 16 }} onClick={() => setAutoResult(null)}>확인</button>
+          </div>
+        </div>
+      ) : null}
     </UIContext.Provider>
   );
 }

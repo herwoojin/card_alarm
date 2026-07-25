@@ -48,6 +48,16 @@ test('문자입력: 2건 일괄 붙여넣기가 거래로 저장된다', async (
   await expect(page.getByText('인식 성공')).toBeVisible();
 });
 
+test('자동화: ?text= 로 열면 자동 저장되고 확인 화면이 뜬다', async ({ page }) => {
+  const sms = '신한카드(1234) 승인 12,000원 일시불 스타벅스 강남점';
+  await page.goto('/?text=' + encodeURIComponent(sms));
+  // 자동 처리 확인 오버레이
+  await expect(page.getByText('1건 저장했습니다')).toBeVisible();
+  await page.getByRole('button', { name: '확인' }).click();
+  // 거래 목록(문자분석 탭)에 남는다
+  await expect(page.getByText('스타벅스 강남점')).toBeVisible();
+});
+
 test('문자입력: 안내 문자는 미인식으로 보존된다', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('button', { name: '템플릿에서 카드 추가' })).toBeVisible();

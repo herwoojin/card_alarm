@@ -13,6 +13,16 @@ export function SettingsSheet() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<unknown | null>(null);
 
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const copyAutoUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(`${origin}/?text=`);
+      ui.toast('주소를 복사했습니다');
+    } catch {
+      ui.toast('복사에 실패했습니다. 위 주소를 길게 눌러 복사하세요');
+    }
+  };
+
   const onExport = async () => {
     const ok = window.confirm(
       '이 파일에는 카드 뒷자리와 결제 내역이 그대로 들어갑니다. 안전한 곳에 보관하세요. 계속할까요?',
@@ -65,6 +75,18 @@ export function SettingsSheet() {
       </a>
 
       <CloudSection />
+
+      <div className="sec">문자 자동 수집 (자동화)</div>
+      <p className="note" style={{ marginTop: 0 }}>
+        문자가 오면 자동으로 넣으려면, 아이폰 <b>단축어</b>나 안드로이드 <b>MacroDroid/Tasker</b>가 문자 도착 시 아래 주소를 열게 하세요. <b>[문자내용]</b> 자리에 받은 문자를 넣습니다.
+      </p>
+      <div className="num" style={{ background: 'var(--paper-2)', border: '1px solid var(--line)', borderRadius: 10, padding: '10px 12px', fontSize: 12, wordBreak: 'break-all', color: 'var(--ink-2)' }}>
+        {origin}/?text=[문자내용]&close=1
+      </div>
+      <div className="btnrow">
+        <button className="btn ghost sm" onClick={copyAutoUrl}>주소 복사</button>
+        <a className="btn ghost sm" href="/guide#auto" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>설정 방법 보기</a>
+      </div>
 
       <div className="sec">기기 백업 (파일)</div>
       <button className="btn" onClick={onExport}>백업 내보내기 (JSON)</button>

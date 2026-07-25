@@ -100,6 +100,34 @@ export default function GuidePage() {
         <br />기기를 바꾸면 <b>[백업 가져오기]</b>로 그대로 복구할 수 있습니다.
       </Step>
 
+      <div className="sec" id="auto">문자 자동으로 넣기 (선택)</div>
+      <div className="box" style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.7 }}>
+          한 번만 설정하면 결제 문자가 올 때마다 앱이 <b>자동으로 열려 저장</b>합니다. 폰의 자동화가 아래 주소를 열게 만드는 방식이에요. <b>[문자내용]</b> 자리에 받은 문자가 들어갑니다.
+          <div className="num" style={{ background: 'var(--paper-2)', border: '1px solid var(--line)', borderRadius: 10, padding: '10px 12px', margin: '10px 0', fontSize: 12, wordBreak: 'break-all', color: 'var(--ink-2)' }}>
+            {'https://<앱주소>/?text=[문자내용]&close=1'}
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <b>📱 아이폰 — 단축어</b>
+            <ol style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+              <li>단축어 앱 → 자동화 → 개인용 자동화 만들기 → <b>메시지</b></li>
+              <li>보낸 사람에 <b>카드사 문자 번호</b> 지정 → “즉시 실행” 켜기</li>
+              <li>동작: <b>URL 열기</b> → 위 주소에서 <b>[문자내용]</b> 자리에 “메시지 내용” 변수 삽입</li>
+            </ol>
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <b>🤖 안드로이드 — MacroDroid / Tasker</b>
+            <ol style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+              <li>트리거: <b>SMS 수신</b>(발신자 = 카드사 번호)</li>
+              <li>동작: <b>웹페이지 열기</b> → 위 주소에서 <b>[문자내용]</b> 자리에 <code>{'{sms_message}'}</code> 변수 삽입</li>
+            </ol>
+          </div>
+        </div>
+        <p className="note" style={{ marginTop: 10 }}>
+          정확한 복사용 주소는 <b>설정 → 문자 자동 수집</b>에 있습니다. 자동화가 번거로우면 “공유하기”나 “붙여넣기”만으로도 충분합니다.
+        </p>
+      </div>
+
       <div className="sec">기억할 점</div>
       <div className="box">
         <div style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.75 }}>
