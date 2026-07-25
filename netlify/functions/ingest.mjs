@@ -5,25 +5,37 @@
  *   GET  /.netlify/functions/ingest?token=<TOKEN>&text=<URL인코딩된 문자>
  *   POST /.netlify/functions/ingest   (JSON {token,text} 또는 폼 token,text)
  *
- * 유일한 쓰기 주체가 이 함수(서비스 계정)라 보안이 깔끔하다.
+ * 구현: 서비스 계정 키(조직 정책으로 막힐 수 있음) 대신 **RTDB 데이터베이스 시크릿**으로
+ * REST 호출한다. 별도 SDK 없이 fetch만 사용 → 콜드스타트도 빠르다.
  * token → uid 를 RTDB(tokenOwners)에서 찾아, 그 사용자 수신함(inbox/{uid})에 문자를 쌓는다.
  * 앱은 로그인 상태에서 이 수신함을 실시간 구독해 저장하고 비운다.
  *
  * 필요한 Netlify 환경변수(둘 다 시크릿):
- *   FIREBASE_SERVICE_ACCOUNT = 서비스 계정 JSON 전체(한 줄)
- *   FIREBASE_DB_URL          = Realtime Database URL (예: https://xxx-default-rtdb.firebasedatabase.app)
+ *   FIREBASE_DB_URL    = Realtime Database URL (예: https://xxx-default-rtdb.asia-southeast1.firebasedatabase.app)
+ *   FIREBASE_DB_SECRET = Firebase 콘솔 → 프로젝트 설정 → 서비스 계정 → 데이터베이스 비밀번호(Secret)
  */
-import { initializeApp, cert, getApps, getApp } from 'firebase-admin/app';
-import { getDatabase } from 'firebase-admin/database';
+const DB = (process.env.FIREBASE_DB_URL || '').replace(/\/+$/, '');
+const SECRET = process.env.FIREBASE_DB_SECRET || '';
 
-function getDb() {
-  const app = getApps().length
-    ? getApp()
-    : initializeApp({
-        credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}')),
-        databaseURL: process.env.FIREBASE_DB_URL,
-      });
-  return getDatabase(app);
+/** RTDB 경로에 안전한 문자만 남긴다(경로 주입 방지). */
+function safeSeg(v) {
+  return String(v || '').replace(/[^A-Za-z0-9_-]/g, '');
+}
+
+async function rtdbGet(path) {
+  const res = await fetch(`${DB}/${path}.json?auth=${encodeURIComponent(SECRET)}`);
+  if (!res.ok) throw new Error('rtdb get ' + res.status);
+  return res.json();
+}
+
+async function rtdbPush(path, data) {
+  const res = await fetch(`${DB}/${path}.json?auth=${encodeURIComponent(SECRET)}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('rtdb push ' + res.status);
+  return res.json();
 }
 
 async function readParams(req) {
@@ -50,20 +62,19 @@ async function readParams(req) {
 }
 
 export default async (req) => {
-  if (!process.env.FIREBASE_SERVICE_ACCOUNT || !process.env.FIREBASE_DB_URL) {
-    return new Response('server not configured', { status: 503 });
-  }
+  if (!DB || !SECRET) return new Response('server not configured', { status: 503 });
   const { token, text } = await readParams(req);
   if (!token || !text) return new Response('missing token or text', { status: 400 });
   if (text.length > 4000) return new Response('text too long', { status: 413 });
 
+  const t = safeSeg(token);
+  if (!t) return new Response('invalid token', { status: 403 });
+
   try {
-    const db = getDb();
-    const ownerSnap = await db.ref('tokenOwners/' + token).get();
-    const uid = ownerSnap.val();
+    const uid = await rtdbGet(`tokenOwners/${t}`);
     if (!uid || typeof uid !== 'string') return new Response('invalid token', { status: 403 });
 
-    await db.ref('inbox/' + uid).push({ text, at: Date.now() });
+    await rtdbPush(`inbox/${safeSeg(uid)}`, { text, at: Date.now() });
 
     const accept = req.headers.get('accept') || '';
     if (accept.includes('text/html')) {
