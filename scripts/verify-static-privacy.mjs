@@ -20,8 +20,11 @@ const ORIGIN = `http://localhost:${PORT}`;
 
 // public/_headers 의 프로덕션 CSP와 동일하게 유지한다.
 const CSP =
-  "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; " +
-  "font-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; " +
+  "default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com https://www.gstatic.com; " +
+  "style-src 'self' 'unsafe-inline'; font-src 'self'; " +
+  "img-src 'self' data: https://*.googleusercontent.com https://ssl.gstatic.com https://www.gstatic.com; " +
+  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://apis.google.com https://www.googleapis.com https://securetoken.googleapis.com; " +
+  "frame-src https://*.firebaseapp.com https://accounts.google.com https://apis.google.com; " +
   "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
 
 const MIME = {

@@ -15,6 +15,7 @@ export const metadata: Metadata = {
     title: '실적ON',
   },
   formatDetection: { telephone: false },
+  other: { 'mobile-web-app-capable': 'yes' },
   icons: {
     icon: '/icon-192.png',
     apple: '/icon-192.png',
