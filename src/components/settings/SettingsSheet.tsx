@@ -59,6 +59,10 @@ export function SettingsSheet() {
       <h3>설정 · 백업</h3>
       <p className="sh-sub">서버에 아무것도 저장되지 않으므로 백업은 직접 하셔야 합니다.</p>
 
+      <a className="btn ghost" href="/guide" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', marginBottom: 4 }}>
+        📖 아주 쉽게 보는 사용법
+      </a>
+
       <div className="sec" style={{ marginTop: 8 }}>백업</div>
       <button className="btn" onClick={onExport}>백업 내보내기 (JSON)</button>
       <div className="btnrow">

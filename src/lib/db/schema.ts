@@ -183,14 +183,6 @@ export async function cleanup(now: Date = new Date()): Promise<void> {
   await trimUnrecognized();
 }
 
-/** 데이터 테이블만 비운다(설정·통계는 보존). 샘플 데이터 주입 등에 사용. */
-export async function clearData(): Promise<void> {
-  const db = getDb();
-  await db.transaction('rw', db.cards, db.transactions, db.unrecognized, async () => {
-    await Promise.all([db.cards.clear(), db.transactions.clear(), db.unrecognized.clear()]);
-  });
-}
-
 /** 전체 삭제 (되돌릴 수 없음). */
 export async function wipeAll(): Promise<void> {
   const db = getDb();

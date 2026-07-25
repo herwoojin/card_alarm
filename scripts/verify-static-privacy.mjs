@@ -47,9 +47,11 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(403).end();
       return;
     }
+    // Netlify pretty-URL과 동일하게: /guide → guide.html → guide/index.html 순으로 해석
     if (!existsSync(file)) {
-      // 정적 export: 알 수 없는 경로는 index.html 로 폴백(클라이언트 탭 처리)
-      file = path.join(ROOT, 'index.html');
+      if (existsSync(file + '.html')) file += '.html';
+      else if (existsSync(path.join(file, 'index.html'))) file = path.join(file, 'index.html');
+      else file = path.join(ROOT, 'index.html');
     }
     const body = await readFile(file);
     const ext = path.extname(file);
@@ -96,15 +98,24 @@ const main = async () => {
 
   await page.goto(ORIGIN + '/', { waitUntil: 'networkidle' });
 
-  // 모든 화면을 훑는다: 샘플 로드 → 각 탭
-  await page.getByRole('button', { name: '샘플 데이터로 둘러보기' }).click();
-  await page.getByText('지금 이 카드로').waitFor();
-  for (const tab of ['내 카드', '문자분석', '최적화', '분석', '대시보드']) {
+  // 실제 흐름으로 데이터를 채운다: 템플릿 카드 등록 → 결제 문자 1건 → 각 탭
+  await page.getByRole('button', { name: '템플릿에서 카드 추가' }).click();
+  await page.getByRole('button', { name: /3구간형/ }).click();
+  await page.getByRole('heading', { name: '내 카드' }).waitFor();
+  await page.getByRole('button', { name: '문자분석', exact: true }).click();
+  await page.getByPlaceholder(/결제 문자를 붙여넣으세요/).fill('신한카드(1234) 승인 1,200,000원 일시불 스타벅스');
+  await page.getByRole('button', { name: '분석해서 저장' }).click();
+  await page.waitForTimeout(300);
+  for (const tab of ['대시보드', '내 카드', '최적화', '분석', '대시보드']) {
     await page.getByRole('button', { name: tab, exact: true }).click();
     await page.waitForTimeout(250);
   }
   // 설정 시트도 열어본다(백업 UI 등)
   await page.getByRole('button', { name: '설정', exact: true }).click();
+  await page.waitForTimeout(250);
+  await page.keyboard.press('Escape').catch(() => {});
+  // 가이드 페이지도 점검(같은 오리진 정적 페이지)
+  await page.goto(ORIGIN + '/guide', { waitUntil: 'networkidle' });
   await page.waitForTimeout(250);
 
   const cspViolations = await page.evaluate(() => window.__csp || []);

@@ -13,7 +13,6 @@ import { PayCta } from '@/components/PayCta';
 export function Dashboard() {
   const cards = useAppStore((s) => s.cards);
   const transactions = useAppStore((s) => s.transactions);
-  const loadSample = useAppStore((s) => s.loadSample);
   const range = useRange();
   const left = useDaysLeft();
   const { actions, target } = useOptimize();
@@ -43,9 +42,9 @@ export function Dashboard() {
           템플릿에서 카드 추가
         </button>
         <div style={{ height: 8 }} />
-        <button className="btn ghost" onClick={() => void loadSample().then(() => ui.toast('샘플 데이터를 넣었습니다'))}>
-          샘플 데이터로 둘러보기
-        </button>
+        <a className="btn ghost" href="/guide" style={{ display: 'block', textDecoration: 'none' }}>
+          📖 아주 쉽게 보는 사용법
+        </a>
       </div>
     );
   }

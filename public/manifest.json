@@ -1,20 +1,29 @@
 {
   "name": "실적ON — 신용카드 실적 관리",
   "short_name": "실적ON",
-  "description": "카드 결제 문자를 읽어 실적을 추적하고, 구간을 넘긴 순간 다른 카드로 갈아타게 해주는 기기 내 처리 웹앱",
-  "lang": "ko",
+  "description": "카드 결제 문자를 읽어 실적을 추적하고, 구간을 넘긴 순간 다른 카드로 갈아타게 해주는 기기 내 처리 웹앱. 결제 데이터는 기기를 벗어나지 않습니다.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
-  "id": "/",
+  "lang": "ko",
+  "dir": "ltr",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#E9ECF1",
   "theme_color": "#101B2D",
   "categories": ["finance", "productivity", "utilities"],
+  "prefer_related_applications": false,
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "/screenshots/shot-dashboard.png", "sizes": "824x1830", "type": "image/png", "form_factor": "narrow", "label": "대시보드 — 지금 써야 할 카드 한 장과 카드별 실적 게이지" },
+    { "src": "/screenshots/shot-optimize.png", "sizes": "824x1830", "type": "image/png", "form_factor": "narrow", "label": "최적화 — 초과 카드는 멈추고 모자란 카드로 옮기는 조치" },
+    { "src": "/screenshots/shot-stats.png", "sizes": "824x1830", "type": "image/png", "form_factor": "narrow", "label": "분석 — 월별·업종별 소비와 연간 전망" }
   ],
   "share_target": {
     "action": "/",
@@ -24,6 +33,7 @@
   },
   "shortcuts": [
     { "name": "문자 넣기", "short_name": "문자", "url": "/?tab=sms" },
-    { "name": "최적화 보기", "short_name": "최적화", "url": "/?tab=opt" }
+    { "name": "최적화 보기", "short_name": "최적화", "url": "/?tab=opt" },
+    { "name": "사용법", "short_name": "사용법", "url": "/guide" }
   ]
 }

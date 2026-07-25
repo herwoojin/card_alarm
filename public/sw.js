@@ -1,6 +1,6 @@
 /* 실적ON 서비스워커 — 오프라인 우선(앱 셸 캐시). Next.js 라우팅에 맞춰 '/'를 셸로 캐시한다. */
-const CACHE = 'siljeokon-v1';
-const SHELL = ['/', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+const CACHE = 'siljeokon-v2';
+const SHELL = ['/', '/guide', '/manifest.json', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -33,16 +33,16 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // 문서 요청은 네트워크 우선(최신 셸), 실패 시 캐시된 셸로 폴백
+  // 문서 요청은 네트워크 우선(최신 셸), 실패 시 요청 경로 캐시 → 앱 셸 순으로 폴백
   if (req.mode === 'navigate') {
     e.respondWith(
       fetch(req)
         .then((res) => {
           const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put('/', copy));
+          caches.open(CACHE).then((c) => c.put(req, copy));
           return res;
         })
-        .catch(() => caches.match('/').then((r) => r || caches.match(req))),
+        .catch(() => caches.match(req).then((r) => r || caches.match('/'))),
     );
     return;
   }

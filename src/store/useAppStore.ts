@@ -27,11 +27,9 @@ import {
   updateTxn,
   addUnrecognized,
   deleteUnrecognized,
-  clearData,
   wipeAll,
   cleanup,
 } from '@/lib/db/schema';
-import { buildSample } from '@/lib/sample';
 import { importAll, type ImportMode, type ImportResult } from '@/lib/db/backup';
 
 /** 카드 에디터/템플릿에서 넘어오는 입력. id가 있으면 수정, 없으면 생성. */
@@ -80,7 +78,6 @@ interface AppState {
   resolveManual: (unrecId: string, data: ManualInput) => Promise<void>;
   dropUnrecognized: (id: string) => Promise<void>;
   setSetting: <K extends keyof Settings>(key: K, value: Settings[K]) => Promise<void>;
-  loadSample: () => Promise<void>;
   wipe: () => Promise<void>;
   importBackup: (parsed: unknown, mode: ImportMode) => Promise<ImportResult>;
 }
@@ -262,17 +259,6 @@ export const useAppStore = create<AppState>((set, get) => ({
   async setSetting(key, value) {
     const settings = await dbSetSettings({ [key]: value } as Partial<Settings>);
     set({ settings });
-  },
-
-  async loadSample() {
-    const { settings } = get();
-    const sample = buildSample(new Date(), settings.cycleStart);
-    await clearData();
-    await Promise.all(sample.cards.map((c) => putCard(c)));
-    await bulkPutTxns(sample.transactions);
-    await Promise.all(sample.unrecognized.map((u) => addUnrecognized(u)));
-    await dbSetStats(sample.stats);
-    await get().reloadAll();
   },
 
   async wipe() {

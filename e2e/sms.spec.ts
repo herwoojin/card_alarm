@@ -7,8 +7,8 @@ import { test, expect } from '@playwright/test';
  */
 test('문자입력: 2건 일괄 붙여넣기가 거래로 저장된다', async ({ page }) => {
   await page.goto('/');
-  // 마운트 대기(빈 상태 버튼이 뜨면 준비 완료)
-  await expect(page.getByRole('button', { name: '샘플 데이터로 둘러보기' })).toBeVisible();
+  // 마운트 대기(빈 상태의 템플릿 버튼이 뜨면 준비 완료)
+  await expect(page.getByRole('button', { name: '템플릿에서 카드 추가' })).toBeVisible();
 
   await page.getByRole('button', { name: '문자분석' }).click();
 
@@ -34,13 +34,13 @@ test('문자입력: 2건 일괄 붙여넣기가 거래로 저장된다', async (
   await expect(page.getByText('스타벅스 강남점')).toBeVisible();
   await expect(page.getByText('이마트 성수점')).toBeVisible();
 
-  // 분석 현황 정확도 반영(인식 성공 2)
+  // 분석 현황 반영
   await expect(page.getByText('인식 성공')).toBeVisible();
 });
 
 test('문자입력: 안내 문자는 미인식으로 보존된다', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('button', { name: '샘플 데이터로 둘러보기' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '템플릿에서 카드 추가' })).toBeVisible();
   await page.getByRole('button', { name: '문자분석' }).click();
 
   await page.getByPlaceholder(/결제 문자를 붙여넣으세요/).fill('[Web발신]\n고객님 이번 달 청구금액 안내\n총 1,284,000원');
